@@ -6,6 +6,11 @@ node_modules/
 .env.local
 .env.production
 
+# Database (SQLite - apenas para desenvolvimento local)
+*.sqlite
+*.sqlite3
+*.db
+
 # Logs
 logs
 *.log
