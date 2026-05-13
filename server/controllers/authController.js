@@ -88,7 +88,7 @@ const clearFailedAttempts = async (userId, type) => {
   } catch (error) {
     // Log silencioso - não mostrar no console
   }
-};};
+};
 
 // Função para sanitizar mensagens de erro (não expor detalhes técnicos)
 const sanitizeError = (error, defaultMessage) => {
