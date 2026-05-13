@@ -27,11 +27,20 @@ npm install -g vercel
 # Login
 vercel login
 
-# Deploy
+# Deploy (certifique-se de estar na pasta painelsmm)
+cd painelsmm
 vercel --prod
 ```
 
-**Anote a URL do deploy**: `https://seu-projeto.vercel.app`
+**⚠️ IMPORTANTE**: 
+- O deploy pode levar 2-3 minutos
+- Aguarde até ver "✅ Production: https://seu-projeto.vercel.app"
+- Anote a URL do deploy
+
+**Se aparecer erro sobre "Function Runtimes":**
+- Isso foi corrigido no `vercel.json`
+- Faça commit e push novamente
+- Tente o deploy novamente
 
 ### 3️⃣ Configurar Variáveis de Ambiente (1 minuto)
 
