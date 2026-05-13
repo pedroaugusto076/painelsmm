@@ -26,7 +26,7 @@ export const authenticateToken = async (req, res, next) => {
 
       // Verificar se usuário ainda existe e está ativo
       const result = await query(
-        'SELECT id, email, name, role, is_active FROM users WHERE id = $1',
+        'SELECT id, email, name, role, is_active FROM users WHERE id = ?',
         [decoded.userId]
       );
 

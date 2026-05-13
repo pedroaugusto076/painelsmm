@@ -388,18 +388,18 @@ export const updateProfile = async (req, res) => {
     const { name, email } = req.body;
     const updates = [];
     const values = [];
-    let paramCount = 1;
+    
 
     if (name) {
       updates.push(`name = $${paramCount}`);
       values.push(name);
-      paramCount++;
+      
     }
 
     if (email) {
       // Verificar se email já existe para outro usuário
       const existingUser = await query(
-        'SELECT id FROM users WHERE email = ? AND id != $2',
+        'SELECT id FROM users WHERE email = ? AND id != ?',
         [email, req.user.id]
       );
 
@@ -412,7 +412,7 @@ export const updateProfile = async (req, res) => {
 
       updates.push(`email = $${paramCount}`);
       values.push(email);
-      paramCount++;
+      
     }
 
     if (updates.length === 0) {
