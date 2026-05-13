@@ -182,6 +182,8 @@ if (process.env.VERCEL || process.env.POSTGRES_URL) {
         payment_status TEXT,
         pix_qr_code TEXT,
         pix_qr_code_base64 TEXT,
+        smmmidia_order_id TEXT,
+        error_message TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

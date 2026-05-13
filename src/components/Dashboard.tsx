@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Package,
   ShoppingCart,
@@ -17,7 +18,8 @@ import {
   ShieldCheck,
   Clock,
   TrendingUp,
-  Loader2
+  Loader2,
+  Settings
 } from 'lucide-react';
 import { authApi, paymentApi } from '../services/api';
 
@@ -93,6 +95,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
   const menuItems = [
     { id: 'servicos', name: 'Serviços', icon: Package },
     { id: 'pedidos', name: 'Meus Pedidos', icon: ShoppingCart },
+    { id: 'admin', name: 'Admin/Logs', icon: Settings },
     { id: 'api', name: 'API', icon: Target },
     { id: 'perfil', name: 'Perfil', icon: User },
   ];
@@ -199,6 +202,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
           {currentTab === 'servicos' && <ServicosTab />}
           {currentTab === 'pedidos' && <PedidosTab />}
+          {currentTab === 'admin' && <AdminTab />}
           {currentTab === 'api' && <ApiTab />}
           {currentTab === 'perfil' && <PerfilTab user={user} />}
         </main>
@@ -225,12 +229,12 @@ const ServicosTab = () => {
       color: 'from-violet-500 to-pink-500',
       description: 'Aumente seus seguidores com perfis reais e ativos',
       packages: [
-        { id: '100', qty: 100, price: 9.90 },
-        { id: '500', qty: 500, price: 39.90 },
-        { id: '1000', qty: 1000, price: 69.90 },
-        { id: '2500', qty: 2500, price: 149.90 },
-        { id: '5000', qty: 5000, price: 279.90 },
-        { id: '10000', qty: 10000, price: 499.90 },
+        { id: '100', qty: 100, price: 0.01, originalPrice: null, discount: null, bonus: false },
+        { id: '500', qty: 500, price: 75, originalPrice: null, discount: null, bonus: false },
+        { id: '1000', qty: 1000, price: 150, originalPrice: null, discount: null, bonus: false },
+        { id: '2500', qty: 2500, price: 337.5, originalPrice: 375, discount: 10, bonus: true },
+        { id: '5000', qty: 5000, price: 594, originalPrice: 742.5, discount: 20, bonus: true },
+        { id: '10000', qty: 10000, price: 1039.5, originalPrice: 1485, discount: 30, bonus: true },
       ]
     },
     {
@@ -240,12 +244,12 @@ const ServicosTab = () => {
       color: 'from-red-500 to-orange-500',
       description: 'Mais curtidas para suas publicações',
       packages: [
-        { id: '100', qty: 100, price: 7.90 },
-        { id: '500', qty: 500, price: 29.90 },
-        { id: '1000', qty: 1000, price: 49.90 },
-        { id: '2500', qty: 2500, price: 99.90 },
-        { id: '5000', qty: 5000, price: 179.90 },
-        { id: '10000', qty: 10000, price: 329.90 },
+        { id: '100', qty: 100, price: 12, originalPrice: null, discount: null, bonus: false },
+        { id: '500', qty: 500, price: 55, originalPrice: null, discount: null, bonus: false },
+        { id: '1000', qty: 1000, price: 100, originalPrice: null, discount: null, bonus: false },
+        { id: '2500', qty: 2500, price: 225, originalPrice: 250, discount: 10, bonus: true },
+        { id: '5000', qty: 5000, price: 380, originalPrice: 475, discount: 20, bonus: true },
+        { id: '10000', qty: 10000, price: 630, originalPrice: 900, discount: 30, bonus: true },
       ]
     },
     {
@@ -255,12 +259,12 @@ const ServicosTab = () => {
       color: 'from-blue-500 to-cyan-500',
       description: 'Comentários reais e engajados',
       packages: [
-        { id: '10', qty: 10, price: 14.90 },
-        { id: '25', qty: 25, price: 29.90 },
-        { id: '50', qty: 50, price: 54.90 },
-        { id: '100', qty: 100, price: 99.90 },
-        { id: '200', qty: 200, price: 179.90 },
-        { id: '500', qty: 500, price: 399.90 },
+        { id: '10', qty: 10, price: 20, originalPrice: null, discount: null, bonus: false },
+        { id: '25', qty: 25, price: 45, originalPrice: null, discount: null, bonus: false },
+        { id: '50', qty: 50, price: 85, originalPrice: null, discount: null, bonus: false },
+        { id: '100', qty: 100, price: 153, originalPrice: 170, discount: 10, bonus: true },
+        { id: '200', qty: 200, price: 256, originalPrice: 320, discount: 20, bonus: true },
+        { id: '500', qty: 500, price: 525, originalPrice: 750, discount: 30, bonus: true },
       ]
     },
     {
@@ -270,12 +274,12 @@ const ServicosTab = () => {
       color: 'from-green-500 to-emerald-500',
       description: 'Aumente as visualizações dos seus vídeos',
       packages: [
-        { id: '1000', qty: 1000, price: 9.90 },
-        { id: '5000', qty: 5000, price: 39.90 },
-        { id: '10000', qty: 10000, price: 69.90 },
-        { id: '25000', qty: 25000, price: 149.90 },
-        { id: '50000', qty: 50000, price: 279.90 },
-        { id: '100000', qty: 100000, price: 499.90 },
+        { id: '1000', qty: 1000, price: 10, originalPrice: null, discount: null, bonus: false },
+        { id: '5000', qty: 5000, price: 45, originalPrice: null, discount: null, bonus: false },
+        { id: '10000', qty: 10000, price: 85, originalPrice: null, discount: null, bonus: false },
+        { id: '25000', qty: 25000, price: 189, originalPrice: 210, discount: 10, bonus: true },
+        { id: '50000', qty: 50000, price: 320, originalPrice: 400, discount: 20, bonus: true },
+        { id: '100000', qty: 100000, price: 525, originalPrice: 750, discount: 30, bonus: true },
       ]
     }
   ];
@@ -328,8 +332,8 @@ const ServicosTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Modal PIX */}
-      {showPixModal && pixData && (
+      {/* Modal PIX - Renderizado via Portal */}
+      {showPixModal && pixData && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           {/* Overlay */}
           <div 
@@ -338,15 +342,18 @@ const ServicosTab = () => {
           />
           
           {/* Modal */}
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <button
-              onClick={closePixModal}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition"
-            >
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Botão Fechar */}
+            <div className="sticky top-0 bg-white z-10 flex justify-end p-4 border-b border-gray-100">
+              <button
+                onClick={closePixModal}
+                className="p-2 hover:bg-gray-100 rounded-lg transition"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
 
-            <div className="text-center">
+            <div className="p-6 text-center">
               {/* Ícone */}
               <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 className="h-8 w-8 text-green-600" />
@@ -364,11 +371,11 @@ const ServicosTab = () => {
 
               {/* QR Code */}
               {pixData.pixQrCodeBase64 && (
-                <div className="bg-white p-4 rounded-xl border-2 border-gray-200 mb-4">
+                <div className="bg-white p-3 rounded-xl border-2 border-gray-200 mb-4 mx-auto w-fit">
                   <img 
                     src={`data:image/png;base64,${pixData.pixQrCodeBase64}`}
                     alt="QR Code PIX"
-                    className="w-full max-w-[250px] mx-auto"
+                    className="w-64 h-64 object-contain"
                   />
                 </div>
               )}
@@ -383,11 +390,11 @@ const ServicosTab = () => {
                     type="text"
                     value={pixData.pixQrCode}
                     readOnly
-                    className="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm font-mono"
+                    className="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm font-mono overflow-hidden text-ellipsis"
                   />
                   <button
                     onClick={copyPixCode}
-                    className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg transition"
+                    className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg transition whitespace-nowrap"
                   >
                     Copiar
                   </button>
@@ -410,7 +417,7 @@ const ServicosTab = () => {
                 Após o pagamento, seu pedido será processado automaticamente em até 5 minutos.
               </p>
 
-              {/* Botão */}
+              {/* Botão Fechar */}
               <button
                 onClick={closePixModal}
                 className="w-full px-4 py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl transition"
@@ -419,7 +426,8 @@ const ServicosTab = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Grid de Serviços */}
@@ -476,33 +484,74 @@ const ServicosTab = () => {
                 Escolha o Pacote
               </label>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {currentService?.packages.map((pkg) => (
-                  <button
-                    key={pkg.id}
-                    type="button"
-                    onClick={() => setSelectedPackage(pkg.id)}
-                    className={`p-4 rounded-xl border-2 transition-all text-left ${
-                      selectedPackage === pkg.id
-                        ? 'border-violet-500 bg-violet-50'
-                        : 'border-gray-200 hover:border-violet-200 bg-white'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-2xl font-bold text-gray-900">
-                        {pkg.qty >= 1000 ? `${pkg.qty / 1000}k` : pkg.qty}
-                      </span>
-                      {selectedPackage === pkg.id && (
-                        <CheckCircle2 className="h-5 w-5 text-violet-600" />
+                {currentService?.packages.map((pkg) => {
+                  // Definir cor do badge baseado no desconto
+                  const badgeColor = pkg.discount === 10 
+                    ? 'from-green-400 to-emerald-400' 
+                    : pkg.discount === 20 
+                    ? 'from-green-500 to-emerald-500' 
+                    : pkg.discount === 30 
+                    ? 'from-green-600 to-emerald-600' 
+                    : '';
+                  
+                  return (
+                    <button
+                      key={pkg.id}
+                      type="button"
+                      onClick={() => setSelectedPackage(pkg.id)}
+                      className={`p-4 rounded-xl border-2 transition-all text-left relative ${
+                        selectedPackage === pkg.id
+                          ? 'border-violet-500 bg-violet-50'
+                          : 'border-gray-200 hover:border-violet-200 bg-white'
+                      }`}
+                    >
+                      {/* Badge de Desconto */}
+                      {pkg.discount && (
+                        <div className={`absolute -top-2 -right-2 bg-gradient-to-r ${badgeColor} text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg`}>
+                          -{pkg.discount}%
+                        </div>
                       )}
-                    </div>
-                    <div className="text-sm text-gray-600 mb-1">
-                      {pkg.qty.toLocaleString()} {currentService.name.toLowerCase()}
-                    </div>
-                    <div className="text-lg font-bold text-violet-600">
-                      R$ {pkg.price.toFixed(2)}
-                    </div>
-                  </button>
-                ))}
+                      
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-2xl font-bold text-gray-900">
+                          {pkg.qty >= 1000 ? `${pkg.qty / 1000}k` : pkg.qty}
+                        </span>
+                        {selectedPackage === pkg.id && (
+                          <CheckCircle2 className="h-5 w-5 text-violet-600" />
+                        )}
+                      </div>
+                      
+                      {/* Quantidade + Bônus */}
+                      <div className="text-sm text-gray-600 mb-1">
+                        {pkg.qty.toLocaleString()} {currentService.name.toLowerCase()}
+                        {pkg.bonus && (
+                          <span className="block text-xs font-bold text-orange-600 mt-0.5">
+                            + {currentService.name} adicionais de brinde! 🎁
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Preço com desconto */}
+                      {pkg.originalPrice ? (
+                        <div>
+                          <div className="text-sm text-gray-400 line-through mb-0.5">
+                            R$ {pkg.originalPrice.toFixed(2)}
+                          </div>
+                          <div className="text-lg font-bold text-green-600">
+                            R$ {pkg.price.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-green-600 font-semibold mt-1">
+                            Economize R$ {(pkg.originalPrice - pkg.price).toFixed(2)}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-lg font-bold text-violet-600">
+                          R$ {pkg.price.toFixed(2)}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -564,6 +613,14 @@ const ServicosTab = () => {
                       <span className="text-gray-600">Quantidade:</span>
                       <span className="font-bold text-gray-900">{currentPackage?.qty.toLocaleString()}</span>
                     </div>
+                    {currentPackage?.bonus && (
+                      <div className="flex justify-between bg-orange-50 -mx-2 px-2 py-1.5 rounded">
+                        <span className="text-orange-600 font-semibold">🎁 Bônus:</span>
+                        <span className="font-bold text-orange-600">
+                          {currentService?.name} adicionais grátis!
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-gray-600">Entrega:</span>
                       <span className="font-bold text-green-600">Até 24 horas</span>
@@ -627,6 +684,209 @@ const ServicosTab = () => {
           </form>
         </div>
       )}
+    </div>
+  );
+};
+
+// Aba de Admin/Logs
+const AdminTab = () => {
+  const [pedidos, setPedidos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  const loadOrders = async () => {
+    try {
+      const response = await paymentApi.getUserOrders();
+      if (response.success && response.data) {
+        setPedidos(response.data.orders);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar pedidos:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadOrders();
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-700 border-green-300';
+      case 'processing': return 'bg-blue-100 text-blue-700 border-blue-300';
+      case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+      case 'cancelled': return 'bg-red-100 text-red-700 border-red-300';
+      case 'error': return 'bg-red-100 text-red-700 border-red-300';
+      default: return 'bg-gray-100 text-gray-700 border-gray-300';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'completed': return 'Concluído';
+      case 'processing': return 'Processando';
+      case 'pending': return 'Pendente';
+      case 'cancelled': return 'Cancelado';
+      case 'error': return 'Erro';
+      default: return status;
+    }
+  };
+
+  const getServiceName = (type: string) => {
+    const names: any = {
+      followers: 'Seguidores',
+      likes: 'Curtidas',
+      comments: 'Comentários',
+      views: 'Visualizações'
+    };
+    return names[type] || type;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-bold text-gray-900 text-lg">Logs de Pedidos & SMMMIDIA</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Visualize o status de envio para a API da SMMMIDIA
+            </p>
+          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg transition flex items-center gap-2 disabled:opacity-50"
+          >
+            <Loader2 className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Atualizar
+          </button>
+        </div>
+
+        {/* Estatísticas */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div className="text-2xl font-bold text-green-700">
+              {pedidos.filter(p => p.status === 'completed').length}
+            </div>
+            <div className="text-xs text-green-600 font-medium">Concluídos</div>
+          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="text-2xl font-bold text-blue-700">
+              {pedidos.filter(p => p.status === 'processing').length}
+            </div>
+            <div className="text-xs text-blue-600 font-medium">Processando</div>
+          </div>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <div className="text-2xl font-bold text-yellow-700">
+              {pedidos.filter(p => p.status === 'pending').length}
+            </div>
+            <div className="text-xs text-yellow-600 font-medium">Pendentes</div>
+          </div>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="text-2xl font-bold text-red-700">
+              {pedidos.filter(p => p.status === 'error').length}
+            </div>
+            <div className="text-xs text-red-600 font-medium">Erros</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Lista de Pedidos */}
+      <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <h3 className="font-bold text-gray-900 mb-4">Todos os Pedidos</h3>
+        {pedidos.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <ShoppingCart className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <p>Nenhum pedido encontrado</p>
+          </div>
+        ) : (
+          <div className="space-y-3 max-h-[600px] overflow-y-auto">
+            {pedidos.map((pedido) => (
+              <div key={pedido.id} className="border border-gray-200 rounded-xl p-4 hover:border-violet-300 transition">
+                {/* Header do Pedido */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h4 className="font-bold text-gray-900">{getServiceName(pedido.service_type)}</h4>
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full border ${getStatusColor(pedido.status)}`}>
+                        {getStatusText(pedido.status)}
+                      </span>
+                      {pedido.payment_status && (
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full border border-gray-300">
+                          PIX: {pedido.payment_status}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {pedido.quantity.toLocaleString()} unidades • @{pedido.instagram_username}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      ID: {pedido.id}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-violet-600">R$ {parseFloat(pedido.price).toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(pedido.created_at).toLocaleDateString('pt-BR')}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(pedido.created_at).toLocaleTimeString('pt-BR')}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Detalhes SMMMIDIA */}
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-gray-500">Payment ID:</span>
+                      <span className="ml-2 font-mono text-gray-700">{pedido.payment_id || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">SMMMIDIA Order ID:</span>
+                      <span className="ml-2 font-mono text-gray-700">
+                        {pedido.smmmidia_order_id ? (
+                          <span className="text-green-600 font-bold">{pedido.smmmidia_order_id}</span>
+                        ) : (
+                          <span className="text-gray-400">Não enviado</span>
+                        )}
+                      </span>
+                    </div>
+                    {pedido.error_message && (
+                      <div className="col-span-2">
+                        <span className="text-red-600 font-semibold">Erro:</span>
+                        <span className="ml-2 text-red-700">{pedido.error_message}</span>
+                      </div>
+                    )}
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Última atualização:</span>
+                      <span className="ml-2 text-gray-700">
+                        {new Date(pedido.updated_at).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

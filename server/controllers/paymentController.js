@@ -1,5 +1,6 @@
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { query } from '../config/database.js';
+import * as smmmidiaService from '../services/smmmidiaService.js';
 
 // Configurar Mercado Pago
 const client = new MercadoPagoConfig({
@@ -15,8 +16,11 @@ export const createPayment = async (req, res) => {
     const { serviceType, packageId, quantity, price, instagramUsername, postUrl } = req.body;
     const userId = req.user.id;
 
+    console.log('📝 Dados recebidos:', { serviceType, packageId, quantity, price, instagramUsername, userId });
+
     // Validações
     if (!serviceType || !packageId || !quantity || !price || !instagramUsername) {
+      console.log('❌ Dados incompletos');
       return res.status(400).json({
         success: false,
         message: 'Dados incompletos para criar o pagamento'
@@ -25,15 +29,29 @@ export const createPayment = async (req, res) => {
 
     // Validar URL do post se necessário
     if (['likes', 'comments', 'views'].includes(serviceType) && !postUrl) {
+      console.log('❌ Link da publicação obrigatório');
       return res.status(400).json({
         success: false,
         message: 'Link da publicação é obrigatório para este serviço'
       });
     }
 
+    // Verificar se o token do Mercado Pago está configurado
+    if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+      console.error('❌ MERCADOPAGO_ACCESS_TOKEN não configurado');
+      return res.status(500).json({
+        success: false,
+        message: 'Mercado Pago não está configurado. Entre em contato com o suporte.'
+      });
+    }
+
+    console.log('✅ Token Mercado Pago configurado');
+
     // Gerar ID único para o pedido
     const crypto = await import('crypto');
     const orderId = crypto.randomUUID();
+
+    console.log('📦 Criando pedido no banco:', orderId);
 
     // Criar pedido no banco de dados
     await query(
@@ -49,6 +67,7 @@ export const createPayment = async (req, res) => {
     );
 
     const order = orderResult.rows[0];
+    console.log('✅ Pedido criado:', order.id);
 
     // Mapear nomes de serviços
     const serviceNames = {
@@ -68,11 +87,23 @@ export const createPayment = async (req, res) => {
         first_name: req.user.name.split(' ')[0],
         last_name: req.user.name.split(' ').slice(1).join(' ') || req.user.name.split(' ')[0]
       },
-      external_reference: order.id.toString(),
-      notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`
+      external_reference: order.id.toString()
+      // notification_url removido para desenvolvimento local
+      // Em produção, será adicionado automaticamente pela Vercel
     };
 
+    // Adicionar notification_url apenas se não for localhost
+    if (process.env.BACKEND_URL && !process.env.BACKEND_URL.includes('localhost')) {
+      body.notification_url = `${process.env.BACKEND_URL}/api/payments/webhook`;
+    }
+
+    console.log('💳 Criando PIX no Mercado Pago...');
+    console.log('Body:', JSON.stringify(body, null, 2));
+
     const response = await payment.create({ body });
+
+    console.log('✅ PIX criado:', response.id);
+    console.log('QR Code:', response.point_of_interaction?.transaction_data?.qr_code ? 'Gerado' : 'Não gerado');
 
     // Salvar payment_id e dados do PIX no pedido
     await query(
@@ -91,6 +122,8 @@ export const createPayment = async (req, res) => {
       ]
     );
 
+    console.log('✅ Pedido atualizado com dados do PIX');
+
     res.json({
       success: true,
       message: 'PIX gerado com sucesso',
@@ -105,10 +138,25 @@ export const createPayment = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Erro ao criar pagamento PIX:', error);
+    console.error('❌ Erro ao criar pagamento PIX:', error);
+    console.error('Detalhes do erro:', error.message);
+    console.error('Stack:', error.stack);
+    
+    // Mensagem de erro mais específica
+    let errorMessage = 'Não foi possível gerar o PIX. Tente novamente.';
+    
+    if (error.message?.includes('credentials')) {
+      errorMessage = 'Token do Mercado Pago inválido. Verifique suas credenciais.';
+    } else if (error.message?.includes('payer')) {
+      errorMessage = 'Erro nos dados do pagador. Verifique seu cadastro.';
+    } else if (error.message?.includes('amount')) {
+      errorMessage = 'Valor do pagamento inválido.';
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Não foi possível gerar o PIX. Tente novamente.'
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -118,6 +166,8 @@ export const handleWebhook = async (req, res) => {
   try {
     const { type, data, action } = req.body;
 
+    console.log('📥 Webhook recebido:', { type, action, paymentId: data?.id });
+
     // Responder imediatamente ao Mercado Pago
     res.status(200).send('OK');
 
@@ -125,13 +175,35 @@ export const handleWebhook = async (req, res) => {
     if (type === 'payment' || action === 'payment.updated') {
       const paymentId = data.id;
 
+      console.log('💳 Buscando informações do pagamento:', paymentId);
+
       // Buscar informações do pagamento
       const paymentInfo = await payment.get({ id: paymentId });
 
       const externalReference = paymentInfo.external_reference;
       const status = paymentInfo.status;
 
-      if (!externalReference) return;
+      console.log('📦 Pedido:', externalReference, '| Status:', status);
+
+      if (!externalReference) {
+        console.log('⚠️ Sem external_reference, ignorando');
+        return;
+      }
+
+      // Buscar dados do pedido
+      const orderResult = await query(
+        `SELECT id, service_type, quantity, instagram_username, post_url, status as current_status
+         FROM orders 
+         WHERE id = ?`,
+        [externalReference]
+      );
+
+      if (orderResult.rows.length === 0) {
+        console.log('❌ Pedido não encontrado:', externalReference);
+        return;
+      }
+
+      const order = orderResult.rows[0];
 
       // Atualizar status do pedido
       let orderStatus = 'pending';
@@ -150,15 +222,61 @@ export const handleWebhook = async (req, res) => {
         [orderStatus, status, externalReference]
       );
 
-      // Se aprovado, iniciar processamento do pedido
-      if (status === 'approved') {
-        console.log(`✅ PIX aprovado! Pedido ${externalReference} em processamento`);
-        // Aqui você pode adicionar lógica para processar o pedido
-        // Por exemplo, enviar para API de SMM, etc.
+      console.log(`✅ Status atualizado: ${orderStatus}`);
+
+      // Se aprovado, enviar para SMMMIDIA
+      if (status === 'approved' && order.current_status !== 'completed') {
+        console.log('🚀 Pagamento aprovado! Enviando para SMMMIDIA...');
+
+        // Construir link do Instagram
+        let instagramLink = '';
+        if (order.service_type === 'followers') {
+          instagramLink = `https://instagram.com/${order.instagram_username}`;
+        } else {
+          instagramLink = order.post_url;
+        }
+
+        console.log('📤 Link:', instagramLink);
+        console.log('📊 Quantidade:', order.quantity);
+
+        // Enviar pedido para SMMMIDIA
+        const smmmidiaResult = await smmmidiaService.createOrder(
+          order.service_type,
+          instagramLink,
+          order.quantity
+        );
+
+        if (smmmidiaResult.success) {
+          console.log('✅ Pedido enviado para SMMMIDIA! Order ID:', smmmidiaResult.orderId);
+
+          // Atualizar pedido com ID da SMMMIDIA
+          await query(
+            `UPDATE orders 
+             SET status = 'completed',
+                 smmmidia_order_id = ?,
+                 updated_at = datetime('now')
+             WHERE id = ?`,
+            [smmmidiaResult.orderId, externalReference]
+          );
+
+          console.log('✅ Pedido concluído:', externalReference);
+        } else {
+          console.error('❌ Erro ao enviar para SMMMIDIA:', smmmidiaResult.error);
+
+          // Marcar como erro
+          await query(
+            `UPDATE orders 
+             SET status = 'error',
+                 error_message = ?,
+                 updated_at = datetime('now')
+             WHERE id = ?`,
+            [smmmidiaResult.error, externalReference]
+          );
+        }
       }
     }
   } catch (error) {
-    console.error('Erro no webhook:', error);
+    console.error('❌ Erro no webhook:', error);
   }
 };
 
