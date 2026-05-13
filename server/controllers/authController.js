@@ -25,7 +25,7 @@ const getClientIp = (req) => {
 const logAuthAttempt = async (ip, email, userId, type, success) => {
   try {
     await query(
-      'INSERT INTO auth_attempts (ip_address, email, user_id, attempt_type, success) VALUES ($1, $2, $3, $4, $5)',
+      'INSERT INTO auth_attempts (ip_address, email, user_id, attempt_type, success) VALUES (?, ?, ?, ?, ?)',
       [ip, email, userId, type, success]
     );
   } catch (error) {
@@ -38,9 +38,9 @@ const checkRateLimit = async (ip, userId, type) => {
   // Verificar tentativas por IP (últimos 30 minutos)
   const ipAttempts = await query(
     `SELECT COUNT(*) as count FROM auth_attempts 
-     WHERE ip_address = $1 
-     AND attempt_type = $2 
-     AND created_at > NOW() - INTERVAL '30 minutes'`,
+     WHERE ip_address = ? 
+     AND attempt_type = ? 
+     AND created_at > datetime('now', '-30 minutes')`,
     [ip, type]
   );
 
@@ -58,9 +58,9 @@ const checkRateLimit = async (ip, userId, type) => {
   if (userId) {
     const userAttempts = await query(
       `SELECT COUNT(*) as count FROM auth_attempts 
-       WHERE user_id = $1 
-       AND attempt_type = $2 
-       AND created_at > NOW() - INTERVAL '30 minutes'`,
+       WHERE user_id = ? 
+       AND attempt_type = ? 
+       AND created_at > datetime('now', '-30 minutes')`,
       [userId, type]
     );
 
@@ -82,7 +82,7 @@ const checkRateLimit = async (ip, userId, type) => {
 const clearFailedAttempts = async (userId, type) => {
   try {
     await query(
-      'DELETE FROM auth_attempts WHERE user_id = $1 AND attempt_type = $2 AND success = false',
+      'DELETE FROM auth_attempts WHERE user_id = ? AND attempt_type = ? AND success = 0',
       [userId, type]
     );
   } catch (error) {
@@ -165,7 +165,7 @@ export const register = async (req, res) => {
 
     // Verificar se email já existe
     const existingUser = await query(
-      'SELECT id FROM users WHERE email = $1',
+      'SELECT id FROM users WHERE email = ?',
       [email.toLowerCase().trim()]
     );
 
@@ -181,15 +181,24 @@ export const register = async (req, res) => {
     const saltRounds = 12; // Aumentado para maior segurança
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
+    // Gerar ID único
+    const crypto = await import('crypto');
+    const userId = crypto.randomUUID();
+
     // Inserir usuário no banco
-    const result = await query(
-      `INSERT INTO users (name, email, password_hash) 
-       VALUES ($1, $2, $3) 
-       RETURNING id, name, email, created_at`,
-      [name.trim(), email.toLowerCase().trim(), passwordHash]
+    await query(
+      `INSERT INTO users (id, name, email, password_hash) 
+       VALUES (?, ?, ?, ?)`,
+      [userId, name.trim(), email.toLowerCase().trim(), passwordHash]
     );
 
-    const user = result.rows[0];
+    // Buscar usuário inserido
+    const userResult = await query(
+      'SELECT id, name, email, created_at FROM users WHERE id = ?',
+      [userId]
+    );
+
+    const user = userResult.rows[0];
 
     // Registrar tentativa bem-sucedida
     await logAuthAttempt(ip, email, user.id, 'register', true);
@@ -247,7 +256,7 @@ export const login = async (req, res) => {
 
     // Buscar usuário PRIMEIRO para pegar o user_id
     const result = await query(
-      'SELECT id, name, email, password_hash, is_active, role FROM users WHERE email = $1',
+      'SELECT id, name, email, password_hash, is_active, role FROM users WHERE email = ?',
       [email.toLowerCase().trim()]
     );
 
@@ -294,7 +303,7 @@ export const login = async (req, res) => {
 
     // Atualizar último login
     await query(
-      'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
+      'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?',
       [user.id]
     );
 
@@ -336,8 +345,7 @@ export const login = async (req, res) => {
 export const getProfile = async (req, res) => {
   try {
     const result = await query(
-      `SELECT id, name, email, email_verified, created_at, last_login, role 
-       FROM users WHERE id = $1`,
+      `SELECT id, name, email, email_verified, created_at, last_login, role FROM users WHERE id = ?`,
       [req.user.id]
     );
 
@@ -391,7 +399,7 @@ export const updateProfile = async (req, res) => {
     if (email) {
       // Verificar se email já existe para outro usuário
       const existingUser = await query(
-        'SELECT id FROM users WHERE email = $1 AND id != $2',
+        'SELECT id FROM users WHERE email = ? AND id != $2',
         [email, req.user.id]
       );
 
@@ -453,7 +461,7 @@ export const changePassword = async (req, res) => {
 
     // Buscar senha atual
     const result = await query(
-      'SELECT password_hash FROM users WHERE id = $1',
+      'SELECT password_hash FROM users WHERE id = ?',
       [req.user.id]
     );
 
@@ -475,7 +483,7 @@ export const changePassword = async (req, res) => {
 
     // Atualizar senha
     await query(
-      'UPDATE users SET password_hash = $1 WHERE id = $2',
+      'UPDATE users SET password_hash = ? WHERE id = ?',
       [newPasswordHash, req.user.id]
     );
 
@@ -519,7 +527,7 @@ export const forgotPassword = async (req, res) => {
 
     // Buscar usuário
     const result = await query(
-      'SELECT id, name, email FROM users WHERE email = $1',
+      'SELECT id, name, email FROM users WHERE email = ?',
       [email.toLowerCase().trim()]
     );
 
@@ -537,8 +545,8 @@ export const forgotPassword = async (req, res) => {
     // PROTEÇÃO 1: Verificar se já existe um token recente (último 1 minuto)
     const recentTokenCheck = await query(
       `SELECT created_at FROM password_resets 
-       WHERE user_id = $1 
-       AND created_at > NOW() - INTERVAL '1 minute'`,
+       WHERE user_id = ? 
+       AND created_at > datetime('now', '-1 minute')`,
       [user.id]
     );
 
@@ -559,8 +567,8 @@ export const forgotPassword = async (req, res) => {
     // PROTEÇÃO 2: Limitar tentativas por usuário (máximo 10 tokens em 1 hora)
     const attemptsCheck = await query(
       `SELECT COUNT(*) as count FROM password_resets 
-       WHERE user_id = $1 
-       AND created_at > NOW() - INTERVAL '1 hour'`,
+       WHERE user_id = ? 
+       AND created_at > datetime('now', '-1 hour')`,
       [user.id]
     );
 
@@ -587,14 +595,18 @@ export const forgotPassword = async (req, res) => {
     const crypto = await import('crypto');
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hora
+    const resetTokenExpiry = new Date(Date.now() + 3600000).toISOString(); // 1 hora
 
-    // Salvar token no banco
+    // Deletar tokens antigos do usuário
+    await query(
+      'DELETE FROM password_resets WHERE user_id = ?',
+      [user.id]
+    );
+
+    // Salvar novo token no banco
     await query(
       `INSERT INTO password_resets (user_id, token_hash, expires_at) 
-       VALUES ($1, $2, $3)
-       ON CONFLICT (user_id) 
-       DO UPDATE SET token_hash = $2, expires_at = $3, created_at = CURRENT_TIMESTAMP`,
+       VALUES (?, ?, ?)`,
       [user.id, resetTokenHash, resetTokenExpiry]
     );
 
@@ -657,7 +669,7 @@ export const resetPassword = async (req, res) => {
       `SELECT pr.user_id, pr.expires_at, u.email 
        FROM password_resets pr
        JOIN users u ON u.id = pr.user_id
-       WHERE pr.token_hash = $1 AND pr.expires_at > CURRENT_TIMESTAMP`,
+       WHERE pr.token_hash = ? AND pr.expires_at > datetime('now')`,
       [tokenHash]
     );
 
@@ -677,13 +689,13 @@ export const resetPassword = async (req, res) => {
 
     // Atualizar senha
     await query(
-      'UPDATE users SET password_hash = $1 WHERE id = $2',
+      'UPDATE users SET password_hash = ? WHERE id = ?',
       [passwordHash, user_id]
     );
 
     // Deletar token usado
     await query(
-      'DELETE FROM password_resets WHERE user_id = $1',
+      'DELETE FROM password_resets WHERE user_id = ?',
       [user_id]
     );
 
@@ -704,3 +716,4 @@ export const resetPassword = async (req, res) => {
     });
   }
 };
+

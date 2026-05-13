@@ -31,12 +31,21 @@ export const createPayment = async (req, res) => {
       });
     }
 
+    // Gerar ID único para o pedido
+    const crypto = await import('crypto');
+    const orderId = crypto.randomUUID();
+
     // Criar pedido no banco de dados
+    await query(
+      `INSERT INTO orders (id, user_id, service_type, package_id, quantity, price, instagram_username, post_url, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      [orderId, userId, serviceType, packageId, quantity, price, instagramUsername, postUrl || null]
+    );
+
+    // Buscar pedido criado
     const orderResult = await query(
-      `INSERT INTO orders (user_id, service_type, package_id, quantity, price, instagram_username, post_url, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
-       RETURNING id, created_at`,
-      [userId, serviceType, packageId, quantity, price, instagramUsername, postUrl || null]
+      'SELECT id, created_at FROM orders WHERE id = ?',
+      [orderId]
     );
 
     const order = orderResult.rows[0];
@@ -68,11 +77,11 @@ export const createPayment = async (req, res) => {
     // Salvar payment_id e dados do PIX no pedido
     await query(
       `UPDATE orders 
-       SET payment_id = $1, 
-           pix_qr_code = $2, 
-           pix_qr_code_base64 = $3,
-           payment_status = $4
-       WHERE id = $5`,
+       SET payment_id = ?, 
+           pix_qr_code = ?, 
+           pix_qr_code_base64 = ?,
+           payment_status = ?
+       WHERE id = ?`,
       [
         response.id,
         response.point_of_interaction?.transaction_data?.qr_code || null,
@@ -134,10 +143,10 @@ export const handleWebhook = async (req, res) => {
 
       await query(
         `UPDATE orders 
-         SET status = $1, 
-             payment_status = $2,
-             updated_at = CURRENT_TIMESTAMP
-         WHERE id = $3`,
+         SET status = ?, 
+             payment_status = ?,
+             updated_at = datetime('now')
+         WHERE id = ?`,
         [orderStatus, status, externalReference]
       );
 
@@ -162,7 +171,7 @@ export const getPaymentStatus = async (req, res) => {
     const result = await query(
       `SELECT id, service_type, quantity, price, status, payment_status, created_at, updated_at
        FROM orders 
-       WHERE id = $1 AND user_id = $2`,
+       WHERE id = ? AND user_id = ?`,
       [orderId, userId]
     );
 
@@ -197,7 +206,7 @@ export const getUserOrders = async (req, res) => {
       `SELECT id, service_type, package_id, quantity, price, instagram_username, 
               status, payment_status, created_at, updated_at
        FROM orders 
-       WHERE user_id = $1 
+       WHERE user_id = ? 
        ORDER BY created_at DESC
        LIMIT 50`,
       [userId]
@@ -217,3 +226,4 @@ export const getUserOrders = async (req, res) => {
     });
   }
 };
+
