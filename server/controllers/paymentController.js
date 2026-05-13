@@ -339,6 +339,8 @@ export const getPaymentStatus = async (req, res) => {
 export const getUserOrders = async (req, res) => {
   try {
     const userId = req.user.id;
+    
+    console.log('📋 [DEBUG] Buscando pedidos do usuário:', userId);
 
     const result = await query(
       `SELECT id, service_type, package_id, quantity, price, instagram_username, 
@@ -351,6 +353,9 @@ export const getUserOrders = async (req, res) => {
       [userId]
     );
 
+    console.log('✅ [DEBUG] Pedidos encontrados:', result.rows.length);
+    console.log('📦 [DEBUG] Pedidos:', JSON.stringify(result.rows, null, 2));
+
     res.json({
       success: true,
       data: {
@@ -358,7 +363,8 @@ export const getUserOrders = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Erro ao listar pedidos:', error);
+    console.error('❌ [ERRO] Erro ao listar pedidos:', error);
+    console.error('📋 [ERRO] Stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Não foi possível carregar seus pedidos'

@@ -967,13 +967,20 @@ const PedidosTab = () => {
   }, []);
 
   const loadOrders = async () => {
+    console.log('📋 [DEBUG] Carregando pedidos...');
     try {
       const response = await paymentApi.getUserOrders();
+      console.log('✅ [DEBUG] Resposta getUserOrders:', response);
+      
       if (response.success && response.data) {
+        console.log('📦 [DEBUG] Pedidos recebidos:', response.data.orders.length);
+        console.log('📦 [DEBUG] Pedidos:', response.data.orders);
         setPedidos(response.data.orders);
+      } else {
+        console.error('❌ [DEBUG] Resposta sem sucesso:', response);
       }
     } catch (error) {
-      console.error('Erro ao carregar pedidos:', error);
+      console.error('❌ [DEBUG] Erro ao carregar pedidos:', error);
     } finally {
       setLoading(false);
     }
