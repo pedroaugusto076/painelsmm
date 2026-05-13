@@ -322,7 +322,8 @@ export const getUserOrders = async (req, res) => {
 
     const result = await query(
       `SELECT id, service_type, package_id, quantity, price, instagram_username, 
-              status, payment_status, created_at, updated_at
+              status, payment_status, created_at, updated_at, payment_id, 
+              smmmidia_order_id, error_message
        FROM orders 
        WHERE user_id = ? 
        ORDER BY created_at DESC
@@ -345,3 +346,145 @@ export const getUserOrders = async (req, res) => {
   }
 };
 
+// Verificar pagamentos pendentes manualmente (útil quando webhook falha)
+export const checkPendingPayments = async (req, res) => {
+  try {
+    console.log('🔍 Verificando pagamentos pendentes...');
+
+    // Buscar pedidos com pagamento pendente
+    const result = await query(
+      `SELECT id, payment_id, service_type, quantity, instagram_username, post_url, status
+       FROM orders 
+       WHERE status IN ('pending', 'processing') 
+       AND payment_id IS NOT NULL
+       ORDER BY created_at DESC
+       LIMIT 20`
+    );
+
+    const pendingOrders = result.rows;
+    console.log(`📦 Encontrados ${pendingOrders.length} pedidos pendentes`);
+
+    const updates = [];
+
+    for (const order of pendingOrders) {
+      try {
+        // Buscar status do pagamento no Mercado Pago
+        const paymentInfo = await payment.get({ id: order.payment_id });
+        const status = paymentInfo.status;
+
+        console.log(`💳 Pedido ${order.id}: Payment ${order.payment_id} = ${status}`);
+
+        // Atualizar status do pedido
+        let orderStatus = order.status;
+        if (status === 'approved' && order.status !== 'completed') {
+          orderStatus = 'processing';
+
+          // Enviar para SMMMIDIA
+          let instagramLink = '';
+          if (order.service_type === 'followers') {
+            instagramLink = `https://instagram.com/${order.instagram_username}`;
+          } else {
+            instagramLink = order.post_url;
+          }
+
+          console.log('🚀 Enviando para SMMMIDIA:', instagramLink);
+
+          const smmmidiaResult = await smmmidiaService.createOrder(
+            order.service_type,
+            instagramLink,
+            order.quantity
+          );
+
+          if (smmmidiaResult.success) {
+            console.log('✅ Enviado! Order ID:', smmmidiaResult.orderId);
+
+            await query(
+              `UPDATE orders 
+               SET status = 'completed',
+                   payment_status = ?,
+                   smmmidia_order_id = ?,
+                   updated_at = datetime('now')
+               WHERE id = ?`,
+              [status, smmmidiaResult.orderId, order.id]
+            );
+
+            updates.push({
+              orderId: order.id,
+              status: 'completed',
+              smmmidiaOrderId: smmmidiaResult.orderId
+            });
+          } else {
+            console.error('❌ Erro SMMMIDIA:', smmmidiaResult.error);
+
+            await query(
+              `UPDATE orders 
+               SET status = 'error',
+                   payment_status = ?,
+                   error_message = ?,
+                   updated_at = datetime('now')
+               WHERE id = ?`,
+              [status, smmmidiaResult.error, order.id]
+            );
+
+            updates.push({
+              orderId: order.id,
+              status: 'error',
+              error: smmmidiaResult.error
+            });
+          }
+        } else if (status === 'rejected' || status === 'cancelled') {
+          await query(
+            `UPDATE orders 
+             SET status = 'cancelled',
+                 payment_status = ?,
+                 updated_at = datetime('now')
+             WHERE id = ?`,
+            [status, order.id]
+          );
+
+          updates.push({
+            orderId: order.id,
+            status: 'cancelled'
+          });
+        } else {
+          // Apenas atualizar payment_status
+          await query(
+            `UPDATE orders 
+             SET payment_status = ?,
+                 updated_at = datetime('now')
+             WHERE id = ?`,
+            [status, order.id]
+          );
+
+          updates.push({
+            orderId: order.id,
+            status: orderStatus,
+            paymentStatus: status
+          });
+        }
+      } catch (error) {
+        console.error(`❌ Erro ao processar pedido ${order.id}:`, error.message);
+        updates.push({
+          orderId: order.id,
+          error: error.message
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Verificados ${pendingOrders.length} pedidos`,
+      data: {
+        checked: pendingOrders.length,
+        updates: updates
+      }
+    });
+  } catch (error) {
+    console.error('❌ Erro ao verificar pagamentos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao verificar pagamentos pendentes',
+      error: error.message
+    });
+  }
+};

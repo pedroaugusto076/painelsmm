@@ -3,7 +3,8 @@ import {
   createPayment, 
   handleWebhook, 
   getPaymentStatus,
-  getUserOrders 
+  getUserOrders,
+  checkPendingPayments
 } from '../controllers/paymentController.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -14,6 +15,9 @@ router.post('/create', authenticateToken, createPayment);
 
 // Webhook do Mercado Pago (público - não precisa de autenticação)
 router.post('/webhook', handleWebhook);
+
+// Verificar pagamentos pendentes manualmente (protegido)
+router.get('/check-pending', authenticateToken, checkPendingPayments);
 
 // Buscar status do pagamento (protegido)
 router.get('/status/:orderId', authenticateToken, getPaymentStatus);

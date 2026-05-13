@@ -82,13 +82,13 @@ const checkRateLimit = async (ip, userId, type) => {
 const clearFailedAttempts = async (userId, type) => {
   try {
     await query(
-      'DELETE FROM auth_attempts WHERE user_id = ? AND attempt_type = ? AND success = 0',
-      [userId, type]
+      'DELETE FROM auth_attempts WHERE user_id = ? AND attempt_type = ? AND success = ?',
+      [userId, type, 0]
     );
   } catch (error) {
     // Log silencioso - não mostrar no console
   }
-};
+};};
 
 // Função para sanitizar mensagens de erro (não expor detalhes técnicos)
 const sanitizeError = (error, defaultMessage) => {

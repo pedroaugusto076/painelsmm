@@ -693,6 +693,7 @@ const AdminTab = () => {
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     loadOrders();
@@ -715,6 +716,30 @@ const AdminTab = () => {
   const handleRefresh = () => {
     setRefreshing(true);
     loadOrders();
+  };
+
+  const handleCheckPending = async () => {
+    setChecking(true);
+    try {
+      const response = await fetch('/api/payments/check-pending', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`✅ Verificados ${data.data.checked} pedidos!\n${data.data.updates.length} atualizações realizadas.`);
+        loadOrders(); // Recarregar lista
+      } else {
+        alert('❌ Erro ao verificar pagamentos: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('❌ Erro ao verificar pagamentos');
+    } finally {
+      setChecking(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -768,14 +793,25 @@ const AdminTab = () => {
               Visualize o status de envio para a API da SMMMIDIA
             </p>
           </div>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg transition flex items-center gap-2 disabled:opacity-50"
-          >
-            <Loader2 className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Atualizar
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleCheckPending}
+              disabled={checking}
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition flex items-center gap-2 disabled:opacity-50"
+              title="Verificar pagamentos pendentes e processar manualmente"
+            >
+              <Loader2 className={`h-4 w-4 ${checking ? 'animate-spin' : ''}`} />
+              {checking ? 'Verificando...' : 'Verificar Pendentes'}
+            </button>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg transition flex items-center gap-2 disabled:opacity-50"
+            >
+              <Loader2 className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Atualizar
+            </button>
+          </div>
         </div>
 
         {/* Estatísticas */}
