@@ -35,32 +35,26 @@ export default async function handler(req, res) {
 ```json
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
   "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs20.x"
+    "api/index.js": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 30
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/api/:path*",
+      "destination": "/api/index.js"
     }
   ]
 }
 ```
+
+**Por que essa mudança?**
+- Vercel não permite usar `builds` e `functions` ao mesmo tempo
+- `functions` é a abordagem moderna e recomendada
+- Suporta mais recursos (memória, timeout, etc.)
+- Usa `rewrites` ao invés de `routes` (mais moderno)
 
 ### 2. **Sintaxe Incorreta de Placeholders SQL**
 

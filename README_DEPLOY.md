@@ -35,10 +35,12 @@ npm install -g vercel
 # Fazer login
 vercel login
 
-# Deploy
+# Deploy (na pasta painelsmm)
 cd painelsmm
 vercel --prod
 ```
+
+**IMPORTANTE**: Se aparecer erro sobre "Conflicting functions and builds", o arquivo `vercel.json` já foi corrigido para usar apenas `functions`.
 
 ## ⚙️ Configurar Variáveis de Ambiente no Vercel
 
