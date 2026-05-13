@@ -1,17 +1,22 @@
 # Correções Aplicadas - Sistema de Pagamento
 
-## Problemas Identificados e Corrigidos
+## 🐛 Problemas Identificados e Corrigidos
 
-### 1. ❌ Erro: "Cannot use import statement outside a module"
+### 1. **Erro "Cannot use import statement outside a module"**
 
 **Causa Raiz:**
 - Vercel não estava configurado corretamente para suportar ES6 modules
-- Faltava configuração de runtime para as funções serverless
+- Faltava configuração adequada para serverless functions
 
 **Correções Aplicadas:**
 
-#### a) Reescrito `api/index.js` para usar dynamic import:
+#### a) Reescrito `api/index.js`
 ```javascript
+// ANTES (não funcionava no Vercel)
+import app from '../server/server.js';
+export default app;
+
+// DEPOIS (funciona no Vercel)
 export default async function handler(req, res) {
   try {
     const { default: app } = await import('../server/server.js');
@@ -26,295 +31,316 @@ export default async function handler(req, res) {
 }
 ```
 
-#### b) Atualizado `vercel.json`:
+#### b) Atualizado `vercel.json`
 ```json
 {
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
   "functions": {
     "api/**/*.js": {
       "runtime": "nodejs20.x"
     }
-  }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
 }
 ```
 
-### 2. ❌ Erro: Sintaxe PostgreSQL em queries SQLite
+### 2. **Sintaxe Incorreta de Placeholders SQL**
 
-**Causa Raiz:**
-- Código estava usando `$1`, `$2` (sintaxe PostgreSQL) ao invés de `?` (sintaxe genérica)
-- Isso causava erros quando o código rodava localmente com SQLite
+**Problema:**
+- Mistura de sintaxe PostgreSQL (`$1`, `$2`) com sintaxe genérica (`?`)
+- Causava erros ao executar queries
 
 **Arquivos Corrigidos:**
 
-#### a) `server/middleware/auth.js`:
+#### a) `server/middleware/auth.js`
 ```javascript
-// ANTES (ERRADO):
+// ANTES
 'SELECT id, email, name, role, is_active FROM users WHERE id = $1'
 
-// DEPOIS (CORRETO):
+// DEPOIS
 'SELECT id, email, name, role, is_active FROM users WHERE id = ?'
 ```
 
-#### b) `server/controllers/authController.js`:
+#### b) `server/controllers/authController.js`
 ```javascript
-// ANTES (ERRADO):
-'SELECT id FROM users WHERE email = ? AND id != $2'
-updates.push(`name = ${paramCount}`)
+// ANTES (função updateProfile)
+updates.push(`name = ${paramCount}`);
+paramCount++;
+// ...
 WHERE id = ${paramCount}
 
-// DEPOIS (CORRETO):
-'SELECT id FROM users WHERE email = ? AND id != ?'
-updates.push(`name = ?`)
+// DEPOIS
+updates.push(`name = ?`);
+// ...
 WHERE id = ?
 ```
 
-### 3. ❌ Erro: Placeholders dinâmicos incorretos em updateProfile
+```javascript
+// ANTES
+'SELECT id FROM users WHERE email = ? AND id != $2'
 
-**Causa Raiz:**
-- Função `updateProfile` estava tentando construir placeholders dinamicamente usando `${paramCount}`
-- Isso não funciona com a função `query` que espera `?` como placeholder
+// DEPOIS
+'SELECT id FROM users WHERE email = ? AND id != ?'
+```
+
+### 3. **Erro de Sintaxe no authController.js**
+
+**Problema:**
+- `};` duplicado após a função `clearFailedAttempts`
 
 **Correção:**
 ```javascript
-// ANTES (ERRADO):
-let paramCount = 1;
-if (name) {
-  updates.push(`name = ${paramCount}`);
-  paramCount++;
-}
-WHERE id = ${paramCount}
+// ANTES
+const clearFailedAttempts = async (userId, type) => {
+  // ...
+};};  // ❌ Duplicado
 
-// DEPOIS (CORRETO):
-if (name) {
-  updates.push(`name = ?`);
-}
-WHERE id = ?
+// DEPOIS
+const clearFailedAttempts = async (userId, type) => {
+  // ...
+};  // ✅ Correto
 ```
 
-## Arquivos Modificados
+### 4. **String Literal Não Terminada no database.js**
 
-1. ✅ `painelsmm/api/index.js` - Reescrito com dynamic import
-2. ✅ `painelsmm/vercel.json` - Adicionado configuração de runtime
-3. ✅ `painelsmm/server/middleware/auth.js` - Corrigido placeholder $1 → ?
-4. ✅ `painelsmm/server/controllers/authController.js` - Corrigidos placeholders
-5. ✅ `painelsmm/server/config/database.js` - Já estava correto (converte automaticamente)
-6. ✅ `painelsmm/src/components/Dashboard.tsx` - Adicionado polling de pagamento
+**Problema:**
+- String quebrada na verificação de sintaxe SQL
 
-## Melhorias Implementadas
-
-### 1. Sistema de Polling Automático de Pagamento
-
-**Funcionalidade:**
-- Após fechar o modal do PIX, inicia verificação automática
-- Verifica status a cada 5 segundos
-- Máximo de 60 tentativas (5 minutos)
-- Mostra modal de "Aguardando Pagamento"
-- Detecta automaticamente quando pagamento é aprovado
-- Fecha modal e mostra mensagem de sucesso
-
-**Estados do Modal:**
-- 🔄 **checking**: Aguardando confirmação
-- ✅ **approved**: Pagamento confirmado
-- ❌ **failed**: Pagamento rejeitado
-
-### 2. Tratamento de Erros Melhorado
-
-**No Frontend:**
-```typescript
-try {
-  const response = await paymentApi.getPaymentStatus(orderId);
-  if (order.payment_status === 'approved') {
-    setPaymentCheckStatus('approved');
-    // Mostrar sucesso e fechar
-  }
-} catch (error) {
-  console.error('Erro ao verificar pagamento:', error);
-}
-```
-
-**No Backend:**
+**Correção:**
 ```javascript
-app.use((err, req, res, next) => {
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Erro interno do servidor',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-});
+// ANTES
+if (sqlQuery.includes('?') && !sqlQuery.includes('  // ❌ String quebrada
+
+// DEPOIS
+if (sqlQuery.includes('?') && !sqlQuery.includes('$'))  // ✅ Correto
 ```
 
-## Como Testar
+## ✅ Verificações Realizadas
 
-### 1. Teste Local
-
+### Sintaxe JavaScript
 ```bash
-# Terminal 1 - Backend
-cd painelsmm/server
-npm install
-npm start
-
-# Terminal 2 - Frontend
-cd painelsmm
-npm install
-npm run dev
+✅ node --check painelsmm/server/server.js
+✅ node --check painelsmm/server/controllers/authController.js
+✅ node --check painelsmm/server/controllers/paymentController.js
+✅ node --check painelsmm/server/routes/payments.js
+✅ node --check painelsmm/server/middleware/auth.js
+✅ node --check painelsmm/server/config/database.js
 ```
 
-Acesse: http://localhost:3000
+### Configuração Vercel
+```bash
+✅ vercel.json - Configuração correta para serverless functions
+✅ api/index.js - Handler assíncrono com dynamic import
+✅ package.json - type: "module" configurado
+✅ server/package.json - type: "module" configurado
+```
 
-### 2. Teste de Pagamento
+## 🚀 Próximos Passos para Deploy
 
-1. Faça login ou cadastro
-2. Vá para "Serviços"
-3. Selecione um serviço (ex: Seguidores)
-4. Escolha um pacote
-5. Preencha o usuário do Instagram
-6. Clique em "Finalizar Pedido"
-7. Modal do PIX aparece com QR Code
-8. **IMPORTANTE**: Pague o PIX usando o app do banco
-9. Feche o modal do PIX
-10. Modal "Aguardando Pagamento" aparece automaticamente
-11. Aguarde alguns segundos
-12. Modal muda para "Pagamento Confirmado!"
-13. Fecha automaticamente e mostra alert de sucesso
-
-### 3. Verificar Pedidos
-
-1. Vá para aba "Meus Pedidos"
-2. Veja o pedido com status "Concluído" ou "Processando"
-3. Vá para aba "Admin/Logs" para ver detalhes técnicos
-
-### 4. Teste do Botão "Verificar Pendentes"
-
-Se o webhook falhar ou o polling não detectar:
-
-1. Vá para aba "Admin/Logs"
-2. Clique em "Verificar Pendentes"
-3. Sistema verifica todos os pedidos pendentes no Mercado Pago
-4. Processa automaticamente os aprovados
-5. Envia para SMMMIDIA
-
-## Deploy no Vercel
-
+### 1. Commit e Push
 ```bash
 cd painelsmm
-
-# Fazer commit das mudanças
 git add .
-git commit -m "fix: corrigir erros de módulos ES6 e sintaxe de queries"
+git commit -m "fix: corrigir erros de módulos ES6 e sintaxe SQL"
 git push
+```
 
-# Deploy
+### 2. Deploy no Vercel
+```bash
 vercel --prod
 ```
 
-## Variáveis de Ambiente Necessárias no Vercel
-
+### 3. Configurar Variáveis de Ambiente
+No painel do Vercel, adicione:
 ```env
-# JWT
-JWT_SECRET=seu_jwt_secret_aqui
+JWT_SECRET=seu_jwt_secret
 JWT_EXPIRES_IN=7d
-
-# Server
 NODE_ENV=production
-
-# URLs (IMPORTANTE: usar URL do Vercel)
 FRONTEND_URL=https://seu-projeto.vercel.app
 BACKEND_URL=https://seu-projeto.vercel.app
-
-# Email
 RESEND_API_KEY=sua_chave_resend
-EMAIL_FROM="Seu Nome <email@resend.dev>"
-
-# Mercado Pago
+EMAIL_FROM="Seu Nome <seu-email@resend.dev>"
 MERCADOPAGO_ACCESS_TOKEN=seu_token_mercadopago
 MERCADOPAGO_WEBHOOK_SECRET=seu_webhook_secret
-
-# SMMMIDIA
 SMMMIDIA_API_URL=https://smmmidia.com/api/v2
 SMMMIDIA_API_KEY=sua_chave_smmmidia
 SMMMIDIA_SERVICE_ID=1353
-
-# Vercel Postgres (configurado automaticamente)
 POSTGRES_URL=será_configurado_pelo_vercel
 ```
 
-## Banco de Dados
+### 4. Criar Banco de Dados Postgres
+1. Vercel Dashboard → Storage → Create Database → Postgres
+2. Execute os comandos SQL do arquivo `DEPLOY_GUIDE.md`
 
-### Local (SQLite)
-- Arquivo: `server/database.sqlite`
-- Criado automaticamente ao iniciar o servidor
-- Tabelas criadas automaticamente
+### 5. Testar o Sistema
 
-### Produção (Vercel Postgres)
-1. Criar banco no painel do Vercel
-2. Executar SQL do arquivo `DEPLOY_GUIDE.md`
-3. Variáveis de ambiente configuradas automaticamente
+#### Teste de Autenticação
+```bash
+# Health Check
+curl https://seu-projeto.vercel.app/api/health
 
-## Logs e Debug
+# Registro
+curl -X POST https://seu-projeto.vercel.app/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Teste","email":"teste@example.com","password":"12345678","confirmPassword":"12345678"}'
 
-### Ver logs no Vercel:
+# Login
+curl -X POST https://seu-projeto.vercel.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"teste@example.com","password":"12345678"}'
+```
+
+#### Teste de Pagamento
+1. Fazer login no sistema
+2. Selecionar um serviço (ex: Seguidores)
+3. Escolher um pacote
+4. Preencher usuário do Instagram
+5. Clicar em "Finalizar Pedido"
+6. Verificar se o QR Code PIX é gerado
+7. Pagar o PIX (ou usar PIX de teste do Mercado Pago)
+8. Fechar o modal do PIX
+9. Verificar se o modal "Aguardando Pagamento" aparece
+10. Aguardar confirmação automática
+
+## 🔍 Debugging
+
+### Ver Logs do Vercel
 ```bash
 vercel logs
 ```
 
-### Ver logs locais:
+### Ver Logs em Tempo Real
 ```bash
-# Backend
-cd painelsmm/server
-npm start
-# Logs aparecem no terminal
-
-# Frontend
-cd painelsmm
-npm run dev
-# Abrir DevTools do navegador (F12) → Console
+vercel logs --follow
 ```
 
-## Troubleshooting
+### Verificar Função Específica
+No painel do Vercel:
+1. Vá em Deployments
+2. Clique no deployment ativo
+3. Vá em Functions
+4. Clique em `api/index.js`
+5. Veja os logs de execução
+
+## 📊 Monitoramento
+
+### Endpoints para Monitorar
+- `GET /api/health` - Status da API
+- `POST /api/auth/login` - Autenticação
+- `POST /api/payments/create` - Criação de pagamento
+- `POST /api/payments/webhook` - Webhook do Mercado Pago
+- `GET /api/payments/orders` - Listar pedidos
+
+### Métricas Importantes
+- Taxa de sucesso de login
+- Taxa de sucesso de criação de pagamento
+- Taxa de confirmação de pagamento (webhook)
+- Tempo de resposta das APIs
+- Erros 500 (verificar logs)
+
+## 🛠️ Troubleshooting
 
 ### Erro: "Cannot use import statement outside a module"
-✅ **CORRIGIDO** - Reescrito api/index.js com dynamic import
+✅ **Resolvido** - Reescrito api/index.js com dynamic import
 
 ### Erro: "Unexpected token 'A'"
-✅ **CORRIGIDO** - Erro de sintaxe no authController.js
+✅ **Resolvido** - Corrigido sintaxe no authController.js e database.js
 
-### Erro: Query com $1, $2
-✅ **CORRIGIDO** - Todos os placeholders convertidos para ?
+### Erro: "Não foi possível carregar seus pedidos"
+✅ **Resolvido** - Corrigido placeholders SQL no middleware/auth.js
 
-### Pagamento não detectado
-✅ **CORRIGIDO** - Adicionado polling automático
-✅ **ALTERNATIVA** - Botão "Verificar Pendentes" na aba Admin
+### Pagamento não confirma automaticamente
+✅ **Resolvido** - Implementado polling automático no frontend
 
 ### Webhook não funciona
-✅ **SOLUÇÃO** - Polling automático detecta pagamentos mesmo sem webhook
-✅ **BACKUP** - Botão "Verificar Pendentes" processa manualmente
+- Verificar se `BACKEND_URL` está configurado corretamente
+- Verificar se o webhook está registrado no Mercado Pago
+- Usar botão "Verificar Pendentes" na aba Admin/Logs como fallback
 
-## Status Final
+## 📝 Arquivos Modificados
 
-✅ Login funcionando
-✅ Cadastro funcionando
-✅ Criação de pedidos funcionando
-✅ Geração de PIX funcionando
-✅ Polling automático de pagamento funcionando
-✅ Detecção de pagamento aprovado funcionando
-✅ Processamento automático para SMMMIDIA funcionando
-✅ Listagem de pedidos funcionando
-✅ Verificação manual de pendentes funcionando
+```
+painelsmm/
+├── api/
+│   └── index.js                          ✏️ Reescrito com dynamic import
+├── server/
+│   ├── config/
+│   │   └── database.js                   ✏️ Corrigido string literal
+│   ├── controllers/
+│   │   ├── authController.js             ✏️ Corrigido }; duplicado e placeholders SQL
+│   │   └── paymentController.js          ✅ Sem alterações
+│   ├── middleware/
+│   │   └── auth.js                       ✏️ Corrigido placeholder $1 para ?
+│   └── routes/
+│       └── payments.js                   ✅ Sem alterações
+├── src/
+│   └── components/
+│       └── Dashboard.tsx                 ✏️ Adicionado polling automático
+├── vercel.json                           ✏️ Atualizado configuração
+├── DEPLOY_GUIDE.md                       ➕ Novo
+├── PAYMENT_FLOW_FIX.md                   ➕ Novo
+└── FIXES_APPLIED.md                      ➕ Novo (este arquivo)
+```
 
-## Próximos Passos
+## ✨ Melhorias Implementadas
 
-1. ✅ Fazer commit e push
-2. ✅ Deploy no Vercel
-3. ✅ Configurar variáveis de ambiente
-4. ✅ Criar banco de dados Postgres
-5. ✅ Testar fluxo completo de pagamento
-6. ✅ Verificar webhook do Mercado Pago
-7. ✅ Testar integração com SMMMIDIA
+1. **Sistema de Polling Automático**
+   - Verifica pagamento a cada 5 segundos
+   - Máximo de 60 tentativas (5 minutos)
+   - Feedback visual em tempo real
 
-## Suporte
+2. **Modal de Verificação de Pagamento**
+   - Estados: checking, approved, failed
+   - Animações suaves
+   - Fechamento automático após confirmação
 
-Se encontrar problemas:
-1. Verificar logs no Vercel: `vercel logs`
-2. Verificar console do navegador (F12)
-3. Testar localmente primeiro
-4. Usar botão "Verificar Pendentes" se webhook falhar
-5. Verificar variáveis de ambiente no Vercel
+3. **Tratamento de Erros Robusto**
+   - Mensagens de erro claras
+   - Logs detalhados no servidor
+   - Fallback com botão "Verificar Pendentes"
+
+4. **Compatibilidade com Vercel**
+   - Dynamic imports para ES6 modules
+   - Configuração otimizada de serverless functions
+   - Runtime Node.js 20.x
+
+## 🎯 Resultado Esperado
+
+Após aplicar todas as correções e fazer o deploy:
+
+✅ Login funciona corretamente
+✅ Criação de pedido funciona
+✅ PIX é gerado com sucesso
+✅ Modal de verificação aparece automaticamente
+✅ Pagamento é confirmado em tempo real
+✅ Pedido aparece na aba "Pedidos" com status correto
+✅ Webhook do Mercado Pago processa pagamentos
+✅ Botão "Verificar Pendentes" funciona como fallback
+
+## 📞 Suporte
+
+Se ainda houver problemas após aplicar todas as correções:
+
+1. Verificar logs do Vercel: `vercel logs`
+2. Verificar variáveis de ambiente no painel do Vercel
+3. Verificar se o banco de dados Postgres foi criado
+4. Verificar se as tabelas foram criadas no banco
+5. Testar endpoints individualmente com curl/Postman
