@@ -220,9 +220,7 @@ const ServicosTab = () => {
   const [loading, setLoading] = useState(false);
   const [showPixModal, setShowPixModal] = useState(false);
   const [pixData, setPixData] = useState<any>(null);
-  const [showPaymentCheckModal, setShowPaymentCheckModal] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
-  const [paymentCheckStatus, setPaymentCheckStatus] = useState<'checking' | 'approved' | 'failed'>('checking');
 
   const services = [
     {
@@ -291,6 +289,16 @@ const ServicosTab = () => {
     e.preventDefault();
     setLoading(true);
     
+    console.log('🚀 [DEBUG] Iniciando criação de pagamento...');
+    console.log('📦 [DEBUG] Dados:', {
+      serviceType: selectedService,
+      packageId: selectedPackage,
+      quantity: currentPackage?.qty,
+      price: currentPackage?.price,
+      instagramUsername: instagramUsername.replace('@', ''),
+      postUrl: postUrl || undefined
+    });
+    
     try {
       // Criar pagamento PIX
       const response = await paymentApi.createPayment({
@@ -302,13 +310,24 @@ const ServicosTab = () => {
         postUrl: postUrl || undefined
       });
 
+      console.log('✅ [DEBUG] Resposta do servidor:', response);
+
       if (response.success && response.data) {
+        console.log('💳 [DEBUG] PIX gerado com sucesso!');
+        console.log('📝 [DEBUG] Order ID:', response.data.orderId);
+        console.log('💰 [DEBUG] Payment ID:', response.data.paymentId);
+        
         // Mostrar modal com QR Code PIX
         setPixData(response.data);
         setCurrentOrderId(response.data.orderId);
         setShowPixModal(true);
+      } else {
+        console.error('❌ [DEBUG] Resposta sem sucesso:', response);
+        alert('Erro ao gerar PIX: ' + (response.message || 'Resposta inválida'));
       }
     } catch (error: any) {
+      console.error('❌ [DEBUG] Erro ao criar pagamento:', error);
+      console.error('📋 [DEBUG] Stack:', error.stack);
       alert(error.message || 'Erro ao gerar PIX. Tente novamente.');
     } finally {
       setLoading(false);
@@ -326,148 +345,23 @@ const ServicosTab = () => {
   };
 
   const closePixModal = () => {
+    console.log('🔄 [DEBUG] Fechando modal do PIX');
+    console.log('📝 [DEBUG] Order ID:', currentOrderId);
+    
     setShowPixModal(false);
-    // Iniciar verificação de pagamento
-    if (currentOrderId) {
-      setPaymentCheckStatus('checking');
-      setShowPaymentCheckModal(true);
-      startPaymentPolling(currentOrderId);
-    }
-  };
-
-  const startPaymentPolling = async (orderId: string) => {
-    let attempts = 0;
-    const maxAttempts = 60; // 5 minutos (60 * 5 segundos)
+    setPixData(null);
+    setCurrentOrderId(null);
+    setSelectedService('followers');
+    setSelectedPackage('');
+    setInstagramUsername('');
+    setPostUrl('');
     
-    const checkPayment = async () => {
-      try {
-        const response = await paymentApi.getPaymentStatus(orderId);
-        
-        if (response.success && response.data) {
-          const order = response.data.order;
-          
-          // Verificar se o pagamento foi aprovado
-          if (order.payment_status === 'approved' || order.status === 'completed' || order.status === 'processing') {
-            setPaymentCheckStatus('approved');
-            
-            // Aguardar 2 segundos e fechar o modal
-            setTimeout(() => {
-              setShowPaymentCheckModal(false);
-              setPixData(null);
-              setCurrentOrderId(null);
-              setSelectedService('followers');
-              setSelectedPackage('');
-              setInstagramUsername('');
-              setPostUrl('');
-              
-              // Mostrar mensagem de sucesso
-              alert('✅ Pagamento confirmado! Seu pedido está sendo processado.');
-            }, 2000);
-            
-            return true; // Parar polling
-          }
-          
-          // Verificar se foi cancelado ou rejeitado
-          if (order.payment_status === 'cancelled' || order.payment_status === 'rejected' || order.status === 'cancelled') {
-            setPaymentCheckStatus('failed');
-            setTimeout(() => {
-              setShowPaymentCheckModal(false);
-              alert('❌ Pagamento não foi aprovado. Tente novamente.');
-            }, 2000);
-            return true; // Parar polling
-          }
-        }
-        
-        attempts++;
-        
-        // Se atingiu o máximo de tentativas
-        if (attempts >= maxAttempts) {
-          setShowPaymentCheckModal(false);
-          alert('⏱️ Tempo de verificação esgotado. Verifique seus pedidos em alguns minutos.');
-          return true;
-        }
-        
-        // Continuar verificando
-        setTimeout(() => checkPayment(), 5000); // Verificar a cada 5 segundos
-        return false;
-        
-      } catch (error) {
-        console.error('Erro ao verificar pagamento:', error);
-        attempts++;
-        
-        if (attempts >= maxAttempts) {
-          setShowPaymentCheckModal(false);
-          return true;
-        }
-        
-        setTimeout(() => checkPayment(), 5000);
-        return false;
-      }
-    };
-    
-    // Iniciar primeira verificação após 3 segundos
-    setTimeout(() => checkPayment(), 3000);
+    // Mostrar mensagem
+    alert('✅ PIX gerado! Após o pagamento, verifique seus pedidos na aba "Meus Pedidos" ou "Admin/Logs".');
   };
 
   return (
     <div className="space-y-6">
-      {/* Modal de Verificação de Pagamento */}
-      {showPaymentCheckModal && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          
-          {/* Modal */}
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
-            {paymentCheckStatus === 'checking' && (
-              <>
-                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
-                  <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Aguardando Pagamento
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Estamos verificando seu pagamento PIX...
-                </p>
-                <p className="text-sm text-gray-500">
-                  Isso pode levar alguns segundos. Não feche esta janela.
-                </p>
-              </>
-            )}
-            
-            {paymentCheckStatus === 'approved' && (
-              <>
-                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="h-8 w-8 text-green-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Pagamento Confirmado!
-                </h3>
-                <p className="text-gray-600">
-                  Seu pedido está sendo processado...
-                </p>
-              </>
-            )}
-            
-            {paymentCheckStatus === 'failed' && (
-              <>
-                <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-                  <X className="h-8 w-8 text-red-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Pagamento Não Confirmado
-                </h3>
-                <p className="text-gray-600">
-                  O pagamento não foi aprovado. Tente novamente.
-                </p>
-              </>
-            )}
-          </div>
-        </div>,
-        document.body
-      )}
-
       {/* Modal PIX - Renderizado via Portal */}
       {showPixModal && pixData && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">

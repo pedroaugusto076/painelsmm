@@ -98,12 +98,17 @@ export const createPayment = async (req, res) => {
     }
 
     console.log('💳 Criando PIX no Mercado Pago...');
-    console.log('Body:', JSON.stringify(body, null, 2));
+    console.log('📋 [DEBUG] Body completo:', JSON.stringify(body, null, 2));
+    console.log('🔑 [DEBUG] Token (primeiros 20 chars):', process.env.MERCADOPAGO_ACCESS_TOKEN?.substring(0, 20) + '...');
 
     const response = await payment.create({ body });
 
     console.log('✅ PIX criado:', response.id);
-    console.log('QR Code:', response.point_of_interaction?.transaction_data?.qr_code ? 'Gerado' : 'Não gerado');
+    console.log('📊 [DEBUG] Status do pagamento:', response.status);
+    console.log('💰 [DEBUG] Valor:', response.transaction_amount);
+    console.log('🔗 [DEBUG] QR Code gerado?', !!response.point_of_interaction?.transaction_data?.qr_code);
+    console.log('📱 [DEBUG] QR Code Base64 gerado?', !!response.point_of_interaction?.transaction_data?.qr_code_base64);
+    console.log('📦 [DEBUG] Resposta completa:', JSON.stringify(response, null, 2));
 
     // Salvar payment_id e dados do PIX no pedido
     await query(
@@ -123,8 +128,9 @@ export const createPayment = async (req, res) => {
     );
 
     console.log('✅ Pedido atualizado com dados do PIX');
+    console.log('📤 [DEBUG] Enviando resposta para o frontend...');
 
-    res.json({
+    const responseData = {
       success: true,
       message: 'PIX gerado com sucesso',
       data: {
@@ -136,21 +142,35 @@ export const createPayment = async (req, res) => {
         amount: response.transaction_amount,
         status: response.status
       }
-    });
+    };
+
+    console.log('✅ [DEBUG] Resposta enviada:', JSON.stringify(responseData, null, 2));
+
+    res.json(responseData);
   } catch (error) {
-    console.error('❌ Erro ao criar pagamento PIX:', error);
-    console.error('Detalhes do erro:', error.message);
-    console.error('Stack:', error.stack);
+    console.error('❌ [ERRO CRÍTICO] Erro ao criar pagamento PIX:', error);
+    console.error('📋 [ERRO] Tipo:', error.constructor.name);
+    console.error('📋 [ERRO] Mensagem:', error.message);
+    console.error('📋 [ERRO] Stack:', error.stack);
+    console.error('📋 [ERRO] Causa:', error.cause);
+    
+    // Se for erro do Mercado Pago, logar detalhes
+    if (error.response) {
+      console.error('📋 [ERRO MP] Status:', error.response.status);
+      console.error('📋 [ERRO MP] Data:', JSON.stringify(error.response.data, null, 2));
+    }
     
     // Mensagem de erro mais específica
     let errorMessage = 'Não foi possível gerar o PIX. Tente novamente.';
     
-    if (error.message?.includes('credentials')) {
+    if (error.message?.includes('credentials') || error.message?.includes('authentication')) {
       errorMessage = 'Token do Mercado Pago inválido. Verifique suas credenciais.';
     } else if (error.message?.includes('payer')) {
       errorMessage = 'Erro nos dados do pagador. Verifique seu cadastro.';
     } else if (error.message?.includes('amount')) {
       errorMessage = 'Valor do pagamento inválido.';
+    } else if (error.message?.includes('timeout')) {
+      errorMessage = 'Timeout ao conectar com Mercado Pago. Tente novamente.';
     }
     
     res.status(500).json({
