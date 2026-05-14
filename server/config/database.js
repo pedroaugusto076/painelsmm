@@ -16,6 +16,67 @@ if (process.env.VERCEL || process.env.POSTGRES_URL) {
   // Importar Vercel Postgres
   const { sql } = await import('@vercel/postgres');
   
+  // Inicializar tabelas no PostgreSQL
+  async function initializePostgresTables() {
+    try {
+      console.log('🔧 [DB] Inicializando tabelas do PostgreSQL...');
+      
+      // Criar tabela users
+      await sql`
+        CREATE TABLE IF NOT EXISTS users (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password_hash VARCHAR(255) NOT NULL,
+          email_verified BOOLEAN DEFAULT FALSE,
+          is_active BOOLEAN DEFAULT TRUE,
+          role VARCHAR(50) DEFAULT 'user',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          last_login TIMESTAMP
+        )
+      `;
+      
+      // Criar tabela orders
+      await sql`
+        CREATE TABLE IF NOT EXISTS orders (
+          id UUID PRIMARY KEY,
+          user_id UUID NOT NULL,
+          service_type VARCHAR(50) NOT NULL,
+          package_id VARCHAR(50) NOT NULL,
+          quantity INTEGER NOT NULL,
+          price DECIMAL(10, 2) NOT NULL,
+          instagram_username VARCHAR(255) NOT NULL,
+          post_url TEXT,
+          status VARCHAR(50) DEFAULT 'pending',
+          payment_id VARCHAR(255),
+          payment_preference_id VARCHAR(255),
+          payment_status VARCHAR(50),
+          pix_qr_code TEXT,
+          pix_qr_code_base64 TEXT,
+          smmmidia_order_id VARCHAR(255),
+          error_message TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      `;
+      
+      // Criar índices
+      await sql`CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_orders_payment_id ON orders(payment_id)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)`;
+      
+      console.log('✅ [DB] Tabelas PostgreSQL inicializadas');
+    } catch (error) {
+      console.error('❌ [DB] Erro ao inicializar tabelas:', error);
+      // Não falhar se as tabelas já existirem
+    }
+  }
+  
+  // Inicializar tabelas
+  await initializePostgresTables();
+  
   // Função query para Vercel Postgres
   query = async (sqlQuery, params = []) => {
     try {

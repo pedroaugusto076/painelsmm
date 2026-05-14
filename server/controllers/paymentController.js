@@ -52,22 +52,33 @@ export const createPayment = async (req, res) => {
     const orderId = crypto.randomUUID();
 
     console.log('📦 Criando pedido no banco:', orderId);
+    console.log('👤 User ID:', userId);
+    console.log('📊 Dados do pedido:', { serviceType, packageId, quantity, price, instagramUsername, postUrl });
 
     // Criar pedido no banco de dados
-    await query(
+    const insertResult = await query(
       `INSERT INTO orders (id, user_id, service_type, package_id, quantity, price, instagram_username, post_url, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
       [orderId, userId, serviceType, packageId, quantity, price, instagramUsername, postUrl || null]
     );
+    
+    console.log('✅ Insert executado. Result:', insertResult);
 
     // Buscar pedido criado
     const orderResult = await query(
-      'SELECT id, created_at FROM orders WHERE id = ?',
+      'SELECT id, user_id, created_at FROM orders WHERE id = ?',
       [orderId]
     );
 
+    console.log('🔍 Verificando se pedido foi criado. Rows:', orderResult.rows.length);
+    
+    if (orderResult.rows.length === 0) {
+      console.error('❌ ERRO: Pedido não foi criado no banco!');
+      throw new Error('Falha ao criar pedido no banco de dados');
+    }
+
     const order = orderResult.rows[0];
-    console.log('✅ Pedido criado:', order.id);
+    console.log('✅ Pedido criado e confirmado:', JSON.stringify(order, null, 2));
 
     // Mapear nomes de serviços
     const serviceNames = {
@@ -238,19 +249,32 @@ export const handleWebhook = async (req, res) => {
       }
 
       // Buscar dados do pedido
+      console.log('🔍 [WEBHOOK] Buscando pedido com ID:', externalReference);
+      
       const orderResult = await query(
-        `SELECT id, service_type, quantity, instagram_username, post_url, status as current_status
+        `SELECT id, user_id, service_type, quantity, instagram_username, post_url, status as current_status
          FROM orders 
          WHERE id = ?`,
         [externalReference]
       );
 
+      console.log('📊 [WEBHOOK] Resultado da busca:', {
+        rowsFound: orderResult.rows.length,
+        searchedId: externalReference
+      });
+
       if (orderResult.rows.length === 0) {
-        console.log('❌ Pedido não encontrado:', externalReference);
+        console.log('❌ [WEBHOOK] Pedido não encontrado no banco de dados!');
+        console.log('🔍 [WEBHOOK] Tentando buscar TODOS os pedidos para debug...');
+        
+        const allOrders = await query('SELECT id, user_id, status, created_at FROM orders ORDER BY created_at DESC LIMIT 10');
+        console.log('📦 [WEBHOOK] Últimos 10 pedidos no banco:', JSON.stringify(allOrders.rows, null, 2));
+        
         return;
       }
 
       const order = orderResult.rows[0];
+      console.log('✅ [WEBHOOK] Pedido encontrado:', JSON.stringify(order, null, 2));
 
       // Atualizar status do pedido
       let orderStatus = 'pending';
