@@ -84,8 +84,78 @@ app.get('/api/health', (req, res) => {
     success: true,
     message: 'API está funcionando',
     timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV
+    env: process.env.NODE_ENV,
+    database: {
+      hasPostgresUrl: !!process.env.POSTGRES_URL,
+      hasVercelEnv: !!process.env.VERCEL,
+      type: (process.env.VERCEL || process.env.POSTGRES_URL) ? 'PostgreSQL' : 'SQLite'
+    }
   });
+});
+
+// Rota de diagnóstico do banco de dados
+app.get('/api/db-check', async (req, res) => {
+  try {
+    const { query, isVercel } = await import('./config/database.js');
+    
+    console.log('🔍 [DB-CHECK] Verificando banco de dados...');
+    console.log('🔍 [DB-CHECK] É Vercel?', isVercel);
+    console.log('🔍 [DB-CHECK] POSTGRES_URL?', !!process.env.POSTGRES_URL);
+    console.log('🔍 [DB-CHECK] VERCEL?', !!process.env.VERCEL);
+    
+    // Testar query simples
+    const testResult = await query('SELECT 1 as test');
+    console.log('✅ [DB-CHECK] Query de teste funcionou:', testResult);
+    
+    // Verificar se tabela orders existe
+    let tableCheck;
+    if (isVercel) {
+      tableCheck = await query(`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'orders'
+      `);
+    } else {
+      tableCheck = await query(`
+        SELECT name FROM sqlite_master WHERE type='table' AND name='orders'
+      `);
+    }
+    
+    console.log('📋 [DB-CHECK] Tabela orders existe?', tableCheck.rows);
+    
+    // Contar total de pedidos
+    const countResult = await query('SELECT COUNT(*) as total FROM orders');
+    console.log('📊 [DB-CHECK] Total de pedidos:', countResult.rows);
+    
+    // Listar últimos 5 pedidos
+    const ordersResult = await query('SELECT id, user_id, status, created_at FROM orders ORDER BY created_at DESC LIMIT 5');
+    console.log('📦 [DB-CHECK] Últimos pedidos:', ordersResult.rows);
+    
+    res.json({
+      success: true,
+      data: {
+        isVercel,
+        hasPostgresUrl: !!process.env.POSTGRES_URL,
+        testQuery: testResult.rows,
+        tableExists: tableCheck.rows.length > 0,
+        totalOrders: countResult.rows[0]?.total || 0,
+        recentOrders: ordersResult.rows
+      }
+    });
+  } catch (error) {
+    console.error('❌ [DB-CHECK] Erro:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      details: {
+        hasPostgresUrl: !!process.env.POSTGRES_URL,
+        hasVercelEnv: !!process.env.VERCEL,
+        errorName: error.name,
+        errorCode: error.code
+      }
+    });
+  }
 });
 
 // Rota 404
