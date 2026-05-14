@@ -33,10 +33,21 @@ if (process.env.VERCEL || process.env.POSTGRES_URL) {
       pgQuery = pgQuery.replace(/datetime\('now'\)/g, 'CURRENT_TIMESTAMP');
       pgQuery = pgQuery.replace(/datetime\('now',\s*'([^']+)'\)/g, "CURRENT_TIMESTAMP + INTERVAL '$1'");
       
+      console.log('🔍 [DB] Query original:', sqlQuery.substring(0, 100) + '...');
+      console.log('🔍 [DB] Query convertida:', pgQuery.substring(0, 100) + '...');
+      console.log('🔍 [DB] Params:', pgParams);
+      
       const result = await sql.query(pgQuery, pgParams);
+      
+      console.log('✅ [DB] Query executada com sucesso. Rows:', result.rows?.length || 0);
+      
       return { rows: result.rows || [] };
     } catch (error) {
-      console.error('Erro na query Vercel Postgres:', error);
+      console.error('❌ [DB] Erro na query Vercel Postgres:', error);
+      console.error('📋 [DB] Query:', sqlQuery);
+      console.error('📋 [DB] Params:', params);
+      console.error('📋 [DB] Error message:', error.message);
+      console.error('📋 [DB] Error stack:', error.stack);
       throw error;
     }
   };
