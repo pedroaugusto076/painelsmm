@@ -357,8 +357,7 @@ export const getUserOrders = async (req, res) => {
 
     const result = await query(
       `SELECT id, service_type, package_id, quantity, price, instagram_username, 
-              status, payment_status, created_at, updated_at, payment_id, 
-              error_message
+              status, payment_status, created_at, updated_at, payment_id
        FROM orders 
        WHERE user_id = ? 
        ORDER BY created_at DESC
