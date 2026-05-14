@@ -30,7 +30,7 @@ router.get('/webhook-test', (req, res) => {
 });
 
 // Verificar pagamentos pendentes manualmente (protegido)
-router.get('/check-pending', authenticateToken, checkPendingPayments);
+router.post('/check-pending', authenticateToken, checkPendingPayments);
 
 // Buscar status do pagamento (protegido)
 router.get('/status/:orderId', authenticateToken, getPaymentStatus);
