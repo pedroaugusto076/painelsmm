@@ -88,13 +88,20 @@ export const createPayment = async (req, res) => {
         last_name: req.user.name.split(' ').slice(1).join(' ') || req.user.name.split(' ')[0]
       },
       external_reference: order.id.toString()
-      // notification_url removido para desenvolvimento local
-      // Em produção, será adicionado automaticamente pela Vercel
     };
 
-    // Adicionar notification_url apenas se não for localhost
-    if (process.env.BACKEND_URL && !process.env.BACKEND_URL.includes('localhost')) {
-      body.notification_url = `${process.env.BACKEND_URL}/api/payments/webhook`;
+    // Adicionar notification_url - Vercel sempre tem BACKEND_URL configurado
+    const backendUrl = process.env.BACKEND_URL || process.env.VERCEL_URL;
+    if (backendUrl) {
+      // Garantir que a URL tenha https:// se for Vercel
+      const webhookUrl = backendUrl.startsWith('http') 
+        ? `${backendUrl}/api/payments/webhook`
+        : `https://${backendUrl}/api/payments/webhook`;
+      
+      body.notification_url = webhookUrl;
+      console.log('🔔 Notification URL configurada:', webhookUrl);
+    } else {
+      console.log('⚠️ BACKEND_URL não configurado - webhook pode não funcionar');
     }
 
     console.log('💳 Criando PIX no Mercado Pago...');
@@ -184,21 +191,41 @@ export const createPayment = async (req, res) => {
 // Webhook do Mercado Pago
 export const handleWebhook = async (req, res) => {
   try {
-    const { type, data, action } = req.body;
+    // Log completo do body para debug
+    console.log('📥 Webhook recebido - Body completo:', JSON.stringify(req.body, null, 2));
+    console.log('📥 Webhook recebido - Query params:', JSON.stringify(req.query, null, 2));
 
-    console.log('📥 Webhook recebido:', { type, action, paymentId: data?.id });
+    // Mercado Pago pode enviar dados via query params ou body
+    const type = req.body.type || req.query.type;
+    const dataId = req.body['data.id'] || req.query['data.id'] || req.body.data?.id;
+    const action = req.body.action || req.query.action;
+
+    console.log('📥 Webhook processado:', { type, action, paymentId: dataId });
 
     // Responder imediatamente ao Mercado Pago
     res.status(200).send('OK');
 
+    // Validar se temos um payment ID
+    if (!dataId) {
+      console.log('⚠️ Webhook sem payment ID, ignorando');
+      return;
+    }
+
     // Processar apenas notificações de pagamento
-    if (type === 'payment' || action === 'payment.updated') {
-      const paymentId = data.id;
+    if (type === 'payment' || action?.includes('payment')) {
+      const paymentId = dataId;
 
       console.log('💳 Buscando informações do pagamento:', paymentId);
 
       // Buscar informações do pagamento
       const paymentInfo = await payment.get({ id: paymentId });
+
+      console.log('📋 Informações do pagamento:', JSON.stringify({
+        id: paymentInfo.id,
+        status: paymentInfo.status,
+        external_reference: paymentInfo.external_reference,
+        transaction_amount: paymentInfo.transaction_amount
+      }, null, 2));
 
       const externalReference = paymentInfo.external_reference;
       const status = paymentInfo.status;
@@ -233,6 +260,8 @@ export const handleWebhook = async (req, res) => {
         orderStatus = 'cancelled';
       }
 
+      console.log(`🔄 Atualizando status do pedido ${externalReference}: ${order.current_status} -> ${orderStatus}`);
+
       await query(
         `UPDATE orders 
          SET status = ?, 
@@ -242,11 +271,18 @@ export const handleWebhook = async (req, res) => {
         [orderStatus, status, externalReference]
       );
 
-      console.log(`✅ Status atualizado: ${orderStatus}`);
+      console.log(`✅ Status atualizado: ${orderStatus} (payment_status: ${status})`);
 
       // Se aprovado, enviar para SMMMIDIA
       if (status === 'approved' && order.current_status !== 'completed') {
         console.log('🚀 Pagamento aprovado! Enviando para SMMMIDIA...');
+        console.log('📦 Dados do pedido:', {
+          id: order.id,
+          service_type: order.service_type,
+          quantity: order.quantity,
+          instagram_username: order.instagram_username,
+          post_url: order.post_url
+        });
 
         // Construir link do Instagram
         let instagramLink = '';
@@ -259,30 +295,44 @@ export const handleWebhook = async (req, res) => {
         console.log('📤 Link:', instagramLink);
         console.log('📊 Quantidade:', order.quantity);
 
-        // Enviar pedido para SMMMIDIA
-        const smmmidiaResult = await smmmidiaService.createOrder(
-          order.service_type,
-          instagramLink,
-          order.quantity
-        );
-
-        if (smmmidiaResult.success) {
-          console.log('✅ Pedido enviado para SMMMIDIA! Order ID:', smmmidiaResult.orderId);
-
-          // Atualizar pedido com ID da SMMMIDIA
-          await query(
-            `UPDATE orders 
-             SET status = 'completed',
-                 smmmidia_order_id = ?,
-                 updated_at = datetime('now')
-             WHERE id = ?`,
-            [smmmidiaResult.orderId, externalReference]
+        try {
+          // Enviar pedido para SMMMIDIA
+          const smmmidiaResult = await smmmidiaService.createOrder(
+            order.service_type,
+            instagramLink,
+            order.quantity
           );
 
-          console.log('✅ Pedido concluído:', externalReference);
-        } else {
-          console.error('❌ Erro ao enviar para SMMMIDIA:', smmmidiaResult.error);
+          if (smmmidiaResult.success) {
+            console.log('✅ Pedido enviado para SMMMIDIA! Order ID:', smmmidiaResult.orderId);
 
+            // Atualizar pedido com ID da SMMMIDIA
+            await query(
+              `UPDATE orders 
+               SET status = 'completed',
+                   smmmidia_order_id = ?,
+                   updated_at = datetime('now')
+               WHERE id = ?`,
+              [smmmidiaResult.orderId, externalReference]
+            );
+
+            console.log('✅ Pedido concluído:', externalReference);
+          } else {
+            console.error('❌ Erro ao enviar para SMMMIDIA:', smmmidiaResult.error);
+
+            // Marcar como erro
+            await query(
+              `UPDATE orders 
+               SET status = 'error',
+                   error_message = ?,
+                   updated_at = datetime('now')
+               WHERE id = ?`,
+              [smmmidiaResult.error, externalReference]
+            );
+          }
+        } catch (smmmidiaError) {
+          console.error('❌ Exceção ao enviar para SMMMIDIA:', smmmidiaError);
+          
           // Marcar como erro
           await query(
             `UPDATE orders 
@@ -290,13 +340,18 @@ export const handleWebhook = async (req, res) => {
                  error_message = ?,
                  updated_at = datetime('now')
              WHERE id = ?`,
-            [smmmidiaResult.error, externalReference]
+            [smmmidiaError.message, externalReference]
           );
         }
+      } else if (status === 'approved') {
+        console.log('ℹ️ Pagamento já foi processado anteriormente (status atual: completed)');
       }
+    } else {
+      console.log('⚠️ Tipo de notificação ignorado:', type, action);
     }
   } catch (error) {
     console.error('❌ Erro no webhook:', error);
+    console.error('📋 Stack:', error.stack);
   }
 };
 

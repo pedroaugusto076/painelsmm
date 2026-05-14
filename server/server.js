@@ -51,6 +51,12 @@ const authLimiter = rateLimit({
 // Aplicar rate limiting geral
 app.use('/api/', limiter);
 
+// Log de requisições em produção
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.url}`);
+  next();
+});
+
 // Rotas
 app.use('/api/auth', authRoutes);
 app.use('/api/payments', paymentRoutes);
@@ -60,20 +66,25 @@ app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     message: 'API está funcionando',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV
   });
 });
 
 // Rota 404
 app.use('*', (req, res) => {
+  console.log('❌ Rota não encontrada:', req.method, req.url);
   res.status(404).json({
     success: false,
-    message: 'Rota não encontrada'
+    message: 'Rota não encontrada',
+    path: req.url,
+    method: req.method
   });
 });
 
 // Error handler global
 app.use((err, req, res, next) => {
+  console.error('❌ Erro global:', err);
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Erro interno do servidor',
