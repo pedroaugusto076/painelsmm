@@ -17,8 +17,23 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet());
 
 // CORS
+const allowedOrigins = [
+  'https://painelsmm-two.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173'
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    // Permitir requisições sem origin (mobile apps, Postman, etc)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
@@ -95,10 +110,12 @@ app.use((err, req, res, next) => {
 });
 
 // Iniciar servidor apenas em desenvolvimento local
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔗 Frontend: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
   });
 }
 

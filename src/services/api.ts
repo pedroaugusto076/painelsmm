@@ -1,6 +1,6 @@
 // API Service Layer for PainelSMM Frontend
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://painelsmm-two.vercel.app/api';
 
 interface ApiResponse<T = any> {
   success: boolean;
