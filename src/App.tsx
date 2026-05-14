@@ -744,7 +744,7 @@ const BottomCTA = () => (
   </section>
 );
 
-const Footer = () => (
+const Footer: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => (
   <footer className="bg-gray-900 text-gray-400 py-8 sm:py-10 md:py-12 border-t border-gray-800 relative z-10">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-800">
@@ -769,16 +769,13 @@ const Footer = () => (
             <h4 className="text-white font-bold mb-3 sm:mb-4 text-sm sm:text-base">Links Úteis</h4>
             <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
               <li><a href="#faq" className="hover:text-violet-400">FAQ</a></li>
-              <li><a href="#" className="hover:text-violet-400">Termos de Responsabilidade</a></li>
-              <li><a href="#" className="hover:text-violet-400">Política de Privacidade</a></li>
+              <li><button onClick={() => onNavigate('termos')} className="hover:text-violet-400 text-left">Termos de Responsabilidade</button></li>
+              <li><button onClick={() => onNavigate('privacidade')} className="hover:text-violet-400 text-left">Política de Privacidade</button></li>
             </ul>
          </div>
       </div>
       <div className="flex flex-col sm:flex-row justify-between items-center text-xs sm:text-sm gap-3 sm:gap-0">
          <p>© {new Date().getFullYear()} testsmm - Todos os direitos reservados.</p>
-         <div className="flex items-center gap-4">
-            <Instagram className="w-4 h-4 sm:w-5 sm:h-5 hover:text-white cursor-pointer" />
-         </div>
       </div>
     </div>
   </footer>
@@ -1550,6 +1547,364 @@ const ResetPasswordPage: React.FC<{ onNavigate: (page: string) => void }> = ({ o
   );
 };
 
+const TermosPage: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => (
+  <div className="min-h-screen bg-gray-50">
+    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16 sm:h-20">
+          <button onClick={() => onNavigate('home')} className="flex items-center gap-2 cursor-pointer">
+            <div className="bg-violet-700 p-1.5 sm:p-2 rounded-lg sm:rounded-xl">
+              <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="currentColor" />
+            </div>
+            <span className="font-bold text-xl sm:text-2xl tracking-tight text-gray-900">testsmm</span>
+          </button>
+          <button 
+            onClick={() => onNavigate('home')}
+            className="flex items-center gap-2 text-gray-600 hover:text-violet-700 transition"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span className="hidden sm:inline">Voltar</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 lg:p-12">
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">Termos de Responsabilidade</h1>
+        <div className="prose prose-gray max-w-none space-y-6 text-gray-700">
+          <p className="text-sm text-gray-500">Última atualização: {new Date().toLocaleDateString('pt-BR')}</p>
+          
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">1. Aceitação dos Termos</h2>
+            <p>
+              Ao acessar e utilizar os serviços da testsmm, você concorda em cumprir e estar vinculado aos seguintes 
+              termos e condições de uso. Se você não concordar com qualquer parte destes termos, não deverá utilizar 
+              nossos serviços.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">2. Descrição dos Serviços</h2>
+            <p>
+              A testsmm oferece serviços de marketing digital para Instagram, incluindo mas não limitado a:
+            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Aumento de seguidores reais e orgânicos</li>
+              <li>Curtidas em publicações</li>
+              <li>Comentários autênticos</li>
+              <li>Visualizações em vídeos</li>
+            </ul>
+            <p className="mt-4">
+              Todos os serviços são fornecidos de acordo com as políticas e diretrizes do Instagram e outras 
+              plataformas de redes sociais aplicáveis.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">3. Responsabilidades do Usuário</h2>
+            <p>Ao utilizar nossos serviços, você concorda em:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Fornecer informações precisas e atualizadas sobre sua conta do Instagram</li>
+              <li>Não utilizar os serviços para fins ilegais ou não autorizados</li>
+              <li>Não violar os termos de serviço do Instagram ou outras plataformas</li>
+              <li>Manter a confidencialidade de suas credenciais de acesso</li>
+              <li>Ser o proprietário legítimo ou ter autorização para gerenciar a conta do Instagram fornecida</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">4. Limitações de Responsabilidade</h2>
+            <p>
+              A testsmm não se responsabiliza por:
+            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Suspensão ou banimento de contas do Instagram devido ao uso inadequado dos serviços</li>
+              <li>Perda de seguidores, curtidas ou engajamento após a entrega dos serviços</li>
+              <li>Mudanças nas políticas do Instagram que possam afetar a entrega dos serviços</li>
+              <li>Interrupções temporárias nos serviços devido a manutenção ou problemas técnicos</li>
+              <li>Resultados específicos de marketing ou crescimento de negócios</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">5. Garantias e Reembolsos</h2>
+            <p>
+              Oferecemos garantia de entrega para todos os nossos pacotes. Caso o serviço não seja entregue 
+              conforme especificado, você pode solicitar reembolso dentro de 30 dias após a compra.
+            </p>
+            <p className="mt-4">
+              Reembolsos não serão concedidos se:
+            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>A conta do Instagram fornecida for privada ou bloqueada</li>
+              <li>O usuário alterar o nome de usuário do Instagram após o pedido</li>
+              <li>O serviço foi entregue conforme especificado</li>
+              <li>A conta do Instagram foi suspensa ou banida por violação dos termos do Instagram</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">6. Pagamentos</h2>
+            <p>
+              Todos os pagamentos são processados de forma segura através do Mercado Pago. Aceitamos pagamentos 
+              via PIX. Os preços estão sujeitos a alterações sem aviso prévio.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">7. Propriedade Intelectual</h2>
+            <p>
+              Todo o conteúdo presente no site da testsmm, incluindo textos, gráficos, logos, ícones e imagens, 
+              é propriedade da testsmm e está protegido por leis de direitos autorais.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">8. Modificações dos Termos</h2>
+            <p>
+              Reservamo-nos o direito de modificar estes termos a qualquer momento. As alterações entrarão em 
+              vigor imediatamente após a publicação no site. O uso continuado dos serviços após as alterações 
+              constitui aceitação dos novos termos.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">9. Lei Aplicável</h2>
+            <p>
+              Estes termos serão regidos e interpretados de acordo com as leis do Brasil. Qualquer disputa 
+              relacionada a estes termos será submetida à jurisdição exclusiva dos tribunais brasileiros.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">10. Contato</h2>
+            <p>
+              Para questões sobre estes termos, entre em contato conosco através do email de suporte disponível 
+              em nosso site.
+            </p>
+          </section>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <button
+            onClick={() => onNavigate('home')}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            Voltar para o Início
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const PrivacidadePage: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => (
+  <div className="min-h-screen bg-gray-50">
+    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16 sm:h-20">
+          <button onClick={() => onNavigate('home')} className="flex items-center gap-2 cursor-pointer">
+            <div className="bg-violet-700 p-1.5 sm:p-2 rounded-lg sm:rounded-xl">
+              <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="currentColor" />
+            </div>
+            <span className="font-bold text-xl sm:text-2xl tracking-tight text-gray-900">testsmm</span>
+          </button>
+          <button 
+            onClick={() => onNavigate('home')}
+            className="flex items-center gap-2 text-gray-600 hover:text-violet-700 transition"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span className="hidden sm:inline">Voltar</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 lg:p-12">
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">Política de Privacidade</h1>
+        <div className="prose prose-gray max-w-none space-y-6 text-gray-700">
+          <p className="text-sm text-gray-500">Última atualização: {new Date().toLocaleDateString('pt-BR')}</p>
+          
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">1. Introdução</h2>
+            <p>
+              A testsmm ("nós", "nosso" ou "nos") está comprometida em proteger sua privacidade. Esta Política de 
+              Privacidade explica como coletamos, usamos, divulgamos e protegemos suas informações quando você 
+              utiliza nossos serviços.
+            </p>
+            <p className="mt-4">
+              Ao utilizar nossos serviços, você concorda com a coleta e uso de informações de acordo com esta política.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">2. Informações que Coletamos</h2>
+            <h3 className="text-xl font-bold text-gray-800 mt-6 mb-3">2.1 Informações Fornecidas por Você</h3>
+            <ul className="list-disc pl-6 space-y-2">
+              <li><strong>Dados de Cadastro:</strong> Nome, email, senha (criptografada)</li>
+              <li><strong>Dados de Pagamento:</strong> Informações processadas através do Mercado Pago (não armazenamos dados de cartão)</li>
+              <li><strong>Dados do Instagram:</strong> Nome de usuário do Instagram, links de publicações</li>
+              <li><strong>Dados de Comunicação:</strong> Mensagens enviadas através de nossos canais de suporte</li>
+            </ul>
+
+            <h3 className="text-xl font-bold text-gray-800 mt-6 mb-3">2.2 Informações Coletadas Automaticamente</h3>
+            <ul className="list-disc pl-6 space-y-2">
+              <li><strong>Dados de Uso:</strong> Páginas visitadas, tempo de permanência, cliques</li>
+              <li><strong>Dados Técnicos:</strong> Endereço IP, tipo de navegador, sistema operacional, dispositivo</li>
+              <li><strong>Cookies:</strong> Utilizamos cookies para melhorar sua experiência (veja seção 7)</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">3. Como Usamos Suas Informações</h2>
+            <p>Utilizamos as informações coletadas para:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Fornecer e manter nossos serviços</li>
+              <li>Processar pagamentos e pedidos</li>
+              <li>Entregar os serviços contratados (seguidores, curtidas, etc.)</li>
+              <li>Enviar notificações sobre pedidos e atualizações de serviço</li>
+              <li>Responder a solicitações de suporte</li>
+              <li>Melhorar nossos serviços e experiência do usuário</li>
+              <li>Detectar e prevenir fraudes</li>
+              <li>Cumprir obrigações legais</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">4. Compartilhamento de Informações</h2>
+            <p>Não vendemos suas informações pessoais. Podemos compartilhar suas informações apenas nas seguintes situações:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li><strong>Processadores de Pagamento:</strong> Mercado Pago para processar transações</li>
+              <li><strong>Provedores de Serviço:</strong> Empresas que nos auxiliam na operação (hospedagem, email, etc.)</li>
+              <li><strong>Requisitos Legais:</strong> Quando exigido por lei ou para proteger nossos direitos</li>
+              <li><strong>Transferência de Negócios:</strong> Em caso de fusão, aquisição ou venda de ativos</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">5. Segurança dos Dados</h2>
+            <p>
+              Implementamos medidas de segurança técnicas e organizacionais para proteger suas informações pessoais:
+            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Criptografia SSL/TLS para transmissão de dados</li>
+              <li>Senhas criptografadas com bcrypt</li>
+              <li>Acesso restrito aos dados pessoais</li>
+              <li>Monitoramento regular de vulnerabilidades</li>
+              <li>Backups regulares e seguros</li>
+            </ul>
+            <p className="mt-4">
+              No entanto, nenhum método de transmissão pela internet é 100% seguro. Não podemos garantir segurança 
+              absoluta dos dados.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">6. Retenção de Dados</h2>
+            <p>
+              Mantemos suas informações pessoais apenas pelo tempo necessário para cumprir os propósitos descritos 
+              nesta política, a menos que um período de retenção mais longo seja exigido ou permitido por lei.
+            </p>
+            <ul className="list-disc pl-6 space-y-2 mt-4">
+              <li><strong>Dados de Conta:</strong> Enquanto sua conta estiver ativa</li>
+              <li><strong>Dados de Pedidos:</strong> Por até 5 anos para fins fiscais e legais</li>
+              <li><strong>Dados de Suporte:</strong> Por até 2 anos após a última interação</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">7. Cookies e Tecnologias Similares</h2>
+            <p>
+              Utilizamos cookies e tecnologias similares para:
+            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li><strong>Cookies Essenciais:</strong> Necessários para o funcionamento do site (autenticação, segurança)</li>
+              <li><strong>Cookies de Desempenho:</strong> Para analisar como os visitantes usam o site</li>
+              <li><strong>Cookies de Funcionalidade:</strong> Para lembrar suas preferências</li>
+            </ul>
+            <p className="mt-4">
+              Você pode configurar seu navegador para recusar cookies, mas isso pode afetar a funcionalidade do site.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">8. Seus Direitos (LGPD)</h2>
+            <p>
+              De acordo com a Lei Geral de Proteção de Dados (LGPD), você tem os seguintes direitos:
+            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li><strong>Acesso:</strong> Solicitar cópias de seus dados pessoais</li>
+              <li><strong>Correção:</strong> Solicitar correção de dados incorretos ou incompletos</li>
+              <li><strong>Exclusão:</strong> Solicitar exclusão de seus dados pessoais</li>
+              <li><strong>Portabilidade:</strong> Solicitar transferência de seus dados para outro provedor</li>
+              <li><strong>Revogação:</strong> Revogar consentimento para processamento de dados</li>
+              <li><strong>Oposição:</strong> Opor-se ao processamento de seus dados em certas circunstâncias</li>
+            </ul>
+            <p className="mt-4">
+              Para exercer esses direitos, entre em contato conosco através do email de suporte.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">9. Privacidade de Menores</h2>
+            <p>
+              Nossos serviços não são destinados a menores de 18 anos. Não coletamos intencionalmente informações 
+              pessoais de menores. Se você é pai/mãe ou responsável e acredita que seu filho nos forneceu informações 
+              pessoais, entre em contato conosco.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">10. Links para Sites de Terceiros</h2>
+            <p>
+              Nosso site pode conter links para sites de terceiros. Não somos responsáveis pelas práticas de 
+              privacidade desses sites. Recomendamos que você leia as políticas de privacidade de cada site que visitar.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">11. Alterações nesta Política</h2>
+            <p>
+              Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre alterações 
+              significativas publicando a nova política nesta página e atualizando a data de "Última atualização".
+            </p>
+            <p className="mt-4">
+              Recomendamos que você revise esta política periodicamente para se manter informado sobre como protegemos 
+              suas informações.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">12. Contato</h2>
+            <p>
+              Se você tiver dúvidas sobre esta Política de Privacidade ou sobre como tratamos seus dados pessoais, 
+              entre em contato conosco através do email de suporte disponível em nosso site.
+            </p>
+            <p className="mt-4">
+              <strong>Controlador de Dados:</strong> testsmm<br />
+              <strong>Email:</strong> Disponível no site<br />
+              <strong>Localização:</strong> Brasil
+            </p>
+          </section>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <button
+            onClick={() => onNavigate('home')}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            Voltar para o Início
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const HomePage: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => (
   <div className="min-h-screen bg-white font-sans selection:bg-violet-700 selection:text-white scroll-smooth relative">
     <Navbar onNavigate={onNavigate} />
@@ -1562,7 +1917,7 @@ const HomePage: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate
     <Features />
     <FAQ />
     <BottomCTA />
-    <Footer />
+    <Footer onNavigate={onNavigate} />
   </div>
 );
 
@@ -1626,6 +1981,14 @@ export default function App() {
 
   if (currentPage === 'reset-password') {
     return <ResetPasswordPage onNavigate={handleNavigate} />;
+  }
+
+  if (currentPage === 'termos') {
+    return <TermosPage onNavigate={handleNavigate} />;
+  }
+
+  if (currentPage === 'privacidade') {
+    return <PrivacidadePage onNavigate={handleNavigate} />;
   }
 
   return <HomePage onNavigate={handleNavigate} />;
