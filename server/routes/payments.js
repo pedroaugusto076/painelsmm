@@ -38,4 +38,61 @@ router.get('/status/:orderId', authenticateToken, getPaymentStatus);
 // Listar pedidos do usuário (protegido)
 router.get('/orders', authenticateToken, getUserOrders);
 
+// Rota de debug do banco de dados (apenas desenvolvimento)
+router.get('/debug/db', authenticateToken, async (req, res) => {
+  try {
+    const { query, isVercel } = await import('../config/database.js');
+    
+    console.log('🔍 [DEBUG] Verificando banco de dados...');
+    console.log('🔍 [DEBUG] É Vercel?', isVercel);
+    console.log('🔍 [DEBUG] User ID:', req.user.id);
+    
+    // Testar query simples
+    const testResult = await query('SELECT 1 as test');
+    console.log('✅ [DEBUG] Query de teste funcionou:', testResult);
+    
+    // Verificar se tabela orders existe
+    let tableCheck;
+    if (isVercel) {
+      tableCheck = await query(`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'orders'
+      `);
+    } else {
+      tableCheck = await query(`
+        SELECT name FROM sqlite_master WHERE type='table' AND name='orders'
+      `);
+    }
+    
+    console.log('📋 [DEBUG] Tabela orders existe?', tableCheck.rows);
+    
+    // Contar pedidos do usuário
+    const countResult = await query(
+      'SELECT COUNT(*) as total FROM orders WHERE user_id = ?',
+      [req.user.id]
+    );
+    
+    console.log('📊 [DEBUG] Total de pedidos:', countResult.rows);
+    
+    res.json({
+      success: true,
+      data: {
+        isVercel,
+        userId: req.user.id,
+        testQuery: testResult.rows,
+        tableExists: tableCheck.rows,
+        orderCount: countResult.rows
+      }
+    });
+  } catch (error) {
+    console.error('❌ [DEBUG] Erro:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 export default router;
