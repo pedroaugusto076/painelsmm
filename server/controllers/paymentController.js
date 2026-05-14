@@ -203,35 +203,36 @@ export const createPayment = async (req, res) => {
 export const handleWebhook = async (req, res) => {
   try {
     // Log completo do body para debug
-    console.log('📥 Webhook recebido - Body completo:', JSON.stringify(req.body, null, 2));
-    console.log('📥 Webhook recebido - Query params:', JSON.stringify(req.query, null, 2));
+    console.log('📥 [WEBHOOK] Recebido - Body:', JSON.stringify(req.body, null, 2));
+    console.log('📥 [WEBHOOK] Query params:', JSON.stringify(req.query, null, 2));
+    console.log('📥 [WEBHOOK] Headers:', JSON.stringify(req.headers, null, 2));
 
     // Mercado Pago pode enviar dados via query params ou body
     const type = req.body.type || req.query.type;
-    const dataId = req.body['data.id'] || req.query['data.id'] || req.body.data?.id;
+    const dataId = req.body['data.id'] || req.query['data.id'] || req.body.data?.id || req.query.id;
     const action = req.body.action || req.query.action;
 
-    console.log('📥 Webhook processado:', { type, action, paymentId: dataId });
+    console.log('📥 [WEBHOOK] Processado:', { type, action, paymentId: dataId });
 
     // Responder imediatamente ao Mercado Pago
     res.status(200).send('OK');
 
     // Validar se temos um payment ID
     if (!dataId) {
-      console.log('⚠️ Webhook sem payment ID, ignorando');
+      console.log('⚠️ [WEBHOOK] Sem payment ID, ignorando');
       return;
     }
 
     // Processar apenas notificações de pagamento
-    if (type === 'payment' || action?.includes('payment')) {
+    if (type === 'payment' || action?.includes('payment') || req.query.topic === 'payment') {
       const paymentId = dataId;
 
-      console.log('💳 Buscando informações do pagamento:', paymentId);
+      console.log('💳 [WEBHOOK] Buscando informações do pagamento:', paymentId);
 
       // Buscar informações do pagamento
       const paymentInfo = await payment.get({ id: paymentId });
 
-      console.log('📋 Informações do pagamento:', JSON.stringify({
+      console.log('📋 [WEBHOOK] Informações do pagamento:', JSON.stringify({
         id: paymentInfo.id,
         status: paymentInfo.status,
         external_reference: paymentInfo.external_reference,
@@ -241,10 +242,10 @@ export const handleWebhook = async (req, res) => {
       const externalReference = paymentInfo.external_reference;
       const status = paymentInfo.status;
 
-      console.log('📦 Pedido:', externalReference, '| Status:', status);
+      console.log('📦 [WEBHOOK] Pedido:', externalReference, '| Status:', status);
 
       if (!externalReference) {
-        console.log('⚠️ Sem external_reference, ignorando');
+        console.log('⚠️ [WEBHOOK] Sem external_reference, ignorando');
         return;
       }
 
@@ -284,9 +285,9 @@ export const handleWebhook = async (req, res) => {
         orderStatus = 'cancelled';
       }
 
-      console.log(`🔄 Atualizando status do pedido ${externalReference}: ${order.current_status} -> ${orderStatus}`);
+      console.log(`🔄 [WEBHOOK] Atualizando status do pedido ${externalReference}: ${order.current_status} -> ${orderStatus}`);
 
-      await query(
+      const updateResult = await query(
         `UPDATE orders 
          SET status = ?, 
              payment_status = ?,
@@ -295,16 +296,18 @@ export const handleWebhook = async (req, res) => {
         [orderStatus, status, externalReference]
       );
 
-      console.log(`✅ Status atualizado: ${orderStatus} (payment_status: ${status})`);
+      console.log(`✅ [WEBHOOK] Status atualizado! Result:`, updateResult);
+      console.log(`✅ [WEBHOOK] Novo status: ${orderStatus} (payment_status: ${status})`);
 
       // Não enviar para SMMMIDIA - apenas marcar como concluído
-      console.log('ℹ️ Pedido marcado como concluído. Integração com SMMMIDIA desabilitada.');
+      console.log('ℹ️ [WEBHOOK] Pedido marcado como concluído. Integração com SMMMIDIA desabilitada.');
     } else {
-      console.log('⚠️ Tipo de notificação ignorado:', type, action);
+      console.log('⚠️ [WEBHOOK] Tipo de notificação ignorado:', type, action);
     }
   } catch (error) {
-    console.error('❌ Erro no webhook:', error);
-    console.error('📋 Stack:', error.stack);
+    console.error('❌ [WEBHOOK] Erro:', error);
+    console.error('📋 [WEBHOOK] Message:', error.message);
+    console.error('📋 [WEBHOOK] Stack:', error.stack);
   }
 };
 
