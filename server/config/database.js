@@ -62,6 +62,14 @@ if (process.env.VERCEL || process.env.POSTGRES_URL) {
         )
       `;
       
+      // Adicionar coluna smmmidia_order_id se não existir (para bancos existentes)
+      try {
+        await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS smmmidia_order_id VARCHAR(255)`;
+        console.log('✅ [DB] Coluna smmmidia_order_id adicionada/verificada');
+      } catch (e) {
+        console.log('ℹ️ [DB] Coluna smmmidia_order_id já existe ou erro ao adicionar:', e.message);
+      }
+      
       // Criar índices
       await sql`CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_orders_payment_id ON orders(payment_id)`;
