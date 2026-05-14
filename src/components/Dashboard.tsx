@@ -18,8 +18,7 @@ import {
   ShieldCheck,
   Clock,
   TrendingUp,
-  Loader2,
-  Settings
+  Loader2
 } from 'lucide-react';
 import { authApi, paymentApi } from '../services/api';
 
@@ -95,7 +94,6 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
   const menuItems = [
     { id: 'servicos', name: 'Serviços', icon: Package },
     { id: 'pedidos', name: 'Meus Pedidos', icon: ShoppingCart },
-    { id: 'admin', name: 'Admin/Logs', icon: Settings },
     { id: 'api', name: 'API', icon: Target },
     { id: 'perfil', name: 'Perfil', icon: User },
   ];
@@ -203,7 +201,6 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
           {currentTab === 'servicos' && <ServicosTab />}
           {currentTab === 'pedidos' && <PedidosTab />}
-          {currentTab === 'admin' && <AdminTab />}
           {currentTab === 'api' && <ApiTab />}
           {currentTab === 'perfil' && <PerfilTab user={user} />}
         </main>
