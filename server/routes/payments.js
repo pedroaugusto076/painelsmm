@@ -38,6 +38,57 @@ router.get('/status/:orderId', authenticateToken, getPaymentStatus);
 // Listar pedidos do usuário (protegido)
 router.get('/orders', authenticateToken, getUserOrders);
 
+// Rota de debug dos pedidos (protegido)
+router.get('/orders-debug', authenticateToken, async (req, res) => {
+  try {
+    const { query } = await import('../config/database.js');
+    const userId = req.user.id;
+    
+    // Buscar pedidos do usuário
+    const userOrders = await query(
+      'SELECT id, user_id, status, created_at FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 10',
+      [userId]
+    );
+    
+    // Buscar todos os pedidos
+    const allOrders = await query(
+      'SELECT id, user_id, status, created_at FROM orders ORDER BY created_at DESC LIMIT 10'
+    );
+    
+    // Contar pedidos do usuário
+    const countResult = await query(
+      'SELECT COUNT(*) as total FROM orders WHERE user_id = ?',
+      [userId]
+    );
+    
+    res.json({
+      success: true,
+      debug: {
+        currentUser: {
+          id: req.user.id,
+          email: req.user.email,
+          name: req.user.name
+        },
+        userOrders: {
+          count: userOrders.rows.length,
+          orders: userOrders.rows
+        },
+        allOrders: {
+          count: allOrders.rows.length,
+          orders: allOrders.rows
+        },
+        totalUserOrders: countResult.rows[0]?.total || 0
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Rota de debug do banco de dados (apenas desenvolvimento)
 router.get('/debug/db', authenticateToken, async (req, res) => {
   try {
