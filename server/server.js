@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/authRoutes.js';
 import paymentRoutes from './routes/payments.js';
+import forceCheckRoutes from './routes/forceCheck.js';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -60,6 +61,7 @@ app.use((req, res, next) => {
 // Rotas
 app.use('/api/auth', authRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/force-check', forceCheckRoutes);
 
 // Rota de health check
 app.get('/api/health', (req, res) => {
