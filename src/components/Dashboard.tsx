@@ -145,6 +145,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
             return (
               <button
                 key={item.id}
+                data-tab={item.id}
                 onClick={() => {
                   setCurrentTab(item.id);
                   setSidebarOpen(false);
@@ -221,6 +222,75 @@ const ServicosTab = () => {
   const [showPixModal, setShowPixModal] = useState(false);
   const [pixData, setPixData] = useState<any>(null);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+
+  // Limpar polling ao desmontar
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
+
+  // Função para verificar status do pagamento
+  const checkPaymentStatus = async (orderId: string) => {
+    try {
+      const response = await paymentApi.getPaymentStatus(orderId);
+      if (response.success && response.data?.order) {
+        const order = response.data.order;
+        console.log('🔍 [POLLING] Status do pedido:', order.status);
+        
+        if (order.status === 'completed') {
+          // Pagamento confirmado!
+          console.log('✅ [POLLING] Pagamento confirmado!');
+          
+          // Parar polling
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
+            setPollingInterval(null);
+          }
+          
+          // Fechar modal do PIX
+          setShowPixModal(false);
+          setPixData(null);
+          
+          // Mostrar modal de sucesso
+          setShowSuccessModal(true);
+          
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('❌ [POLLING] Erro ao verificar status:', error);
+      return false;
+    }
+  };
+
+  // Iniciar polling quando o modal PIX é aberto
+  useEffect(() => {
+    if (showPixModal && currentOrderId) {
+      console.log('🔄 [POLLING] Iniciando verificação automática do pagamento...');
+      
+      // Verificar a cada 5 segundos
+      const interval = setInterval(() => {
+        checkPaymentStatus(currentOrderId);
+      }, 5000);
+      
+      setPollingInterval(interval);
+      
+      // Parar após 10 minutos (120 verificações)
+      setTimeout(() => {
+        if (interval) {
+          clearInterval(interval);
+          setPollingInterval(null);
+          console.log('⏱️ [POLLING] Tempo limite atingido');
+        }
+      }, 600000); // 10 minutos
+    }
+  }, [showPixModal, currentOrderId]);
 
   const services = [
     {
@@ -362,6 +432,60 @@ const ServicosTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Modal de Sucesso - Renderizado via Portal */}
+      {showSuccessModal && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in fade-in zoom-in duration-300">
+            <div className="text-center">
+              {/* Ícone de Sucesso Animado */}
+              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4 animate-bounce">
+                <CheckCircle2 className="h-12 w-12 text-green-600" />
+              </div>
+              
+              {/* Título */}
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                🎉 Pagamento Confirmado!
+              </h3>
+              
+              {/* Mensagem */}
+              <p className="text-gray-600 mb-6">
+                Seu pedido foi confirmado com sucesso e está sendo processado.
+              </p>
+              
+              {/* Informação */}
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+                <p className="text-sm text-green-800">
+                  ✓ Pagamento recebido<br />
+                  ✓ Pedido em processamento<br />
+                  ✓ Entrega em até 24 horas
+                </p>
+              </div>
+              
+              {/* Botão */}
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setCurrentOrderId(null);
+                  // Redirecionar para Meus Pedidos
+                  const dashboard = document.querySelector('[data-tab="pedidos"]') as HTMLButtonElement;
+                  if (dashboard) {
+                    dashboard.click();
+                  }
+                }}
+                className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl transition shadow-lg"
+              >
+                Ver Meus Pedidos
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Modal PIX - Renderizado via Portal */}
       {showPixModal && pixData && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -973,9 +1097,10 @@ const PedidosTab = () => {
       console.log('✅ [DEBUG] Resposta getUserOrders:', response);
       
       if (response.success && response.data) {
-        console.log('📦 [DEBUG] Pedidos recebidos:', response.data.orders.length);
-        console.log('📦 [DEBUG] Pedidos:', response.data.orders);
-        setPedidos(response.data.orders);
+        // Filtrar apenas pedidos concluídos (pagos)
+        const completedOrders = response.data.orders.filter((order: any) => order.status === 'completed');
+        console.log('📦 [DEBUG] Pedidos concluídos:', completedOrders.length);
+        setPedidos(completedOrders);
       } else {
         console.error('❌ [DEBUG] Resposta sem sucesso:', response);
       }
@@ -983,26 +1108,6 @@ const PedidosTab = () => {
       console.error('❌ [DEBUG] Erro ao carregar pedidos:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 text-green-700';
-      case 'processing': return 'bg-blue-100 text-blue-700';
-      case 'pending': return 'bg-yellow-100 text-yellow-700';
-      case 'cancelled': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completed': return 'Concluído';
-      case 'processing': return 'Processando';
-      case 'pending': return 'Pendente';
-      case 'cancelled': return 'Cancelado';
-      default: return status;
     }
   };
 
@@ -1027,21 +1132,28 @@ const PedidosTab = () => {
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-xl p-6 border border-gray-200">
-        <h3 className="font-bold text-gray-900 mb-4">Histórico de Pedidos</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-gray-900">Pedidos Confirmados</h3>
+          <span className="text-sm text-gray-600">
+            {pedidos.length} {pedidos.length === 1 ? 'pedido' : 'pedidos'}
+          </span>
+        </div>
         {pedidos.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <ShoppingCart className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p>Você ainda não fez nenhum pedido</p>
+            <p className="font-semibold mb-1">Nenhum pedido confirmado</p>
+            <p className="text-sm">Seus pedidos pagos aparecerão aqui</p>
           </div>
         ) : (
           <div className="space-y-3">
             {pedidos.map((pedido) => (
-              <div key={pedido.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+              <div key={pedido.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl hover:shadow-md transition">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
                     <h4 className="font-bold text-gray-900">{getServiceName(pedido.service_type)}</h4>
-                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${getStatusColor(pedido.status)}`}>
-                      {getStatusText(pedido.status)}
+                    <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
+                      ✓ Confirmado
                     </span>
                   </div>
                   <p className="text-sm text-gray-600">
@@ -1052,7 +1164,8 @@ const PedidosTab = () => {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-violet-600">R$ {parseFloat(pedido.price).toFixed(2)}</p>
+                  <p className="font-bold text-green-600">R$ {parseFloat(pedido.price).toFixed(2)}</p>
+                  <p className="text-xs text-green-600 font-semibold mt-1">Pago</p>
                 </div>
               </div>
             ))}
