@@ -255,7 +255,7 @@ export const handleWebhook = async (req, res) => {
       // Atualizar status do pedido
       let orderStatus = 'pending';
       if (status === 'approved') {
-        orderStatus = 'processing';
+        orderStatus = 'completed'; // Marcar como concluído direto
       } else if (status === 'rejected' || status === 'cancelled') {
         orderStatus = 'cancelled';
       }
@@ -273,79 +273,8 @@ export const handleWebhook = async (req, res) => {
 
       console.log(`✅ Status atualizado: ${orderStatus} (payment_status: ${status})`);
 
-      // Se aprovado, enviar para SMMMIDIA
-      if (status === 'approved' && order.current_status !== 'completed') {
-        console.log('🚀 Pagamento aprovado! Enviando para SMMMIDIA...');
-        console.log('📦 Dados do pedido:', {
-          id: order.id,
-          service_type: order.service_type,
-          quantity: order.quantity,
-          instagram_username: order.instagram_username,
-          post_url: order.post_url
-        });
-
-        // Construir link do Instagram
-        let instagramLink = '';
-        if (order.service_type === 'followers') {
-          instagramLink = `https://instagram.com/${order.instagram_username}`;
-        } else {
-          instagramLink = order.post_url;
-        }
-
-        console.log('📤 Link:', instagramLink);
-        console.log('📊 Quantidade:', order.quantity);
-
-        try {
-          // Enviar pedido para SMMMIDIA
-          const smmmidiaResult = await smmmidiaService.createOrder(
-            order.service_type,
-            instagramLink,
-            order.quantity
-          );
-
-          if (smmmidiaResult.success) {
-            console.log('✅ Pedido enviado para SMMMIDIA! Order ID:', smmmidiaResult.orderId);
-
-            // Atualizar pedido com ID da SMMMIDIA
-            await query(
-              `UPDATE orders 
-               SET status = 'completed',
-                   smmmidia_order_id = ?,
-                   updated_at = datetime('now')
-               WHERE id = ?`,
-              [smmmidiaResult.orderId, externalReference]
-            );
-
-            console.log('✅ Pedido concluído:', externalReference);
-          } else {
-            console.error('❌ Erro ao enviar para SMMMIDIA:', smmmidiaResult.error);
-
-            // Marcar como erro
-            await query(
-              `UPDATE orders 
-               SET status = 'error',
-                   error_message = ?,
-                   updated_at = datetime('now')
-               WHERE id = ?`,
-              [smmmidiaResult.error, externalReference]
-            );
-          }
-        } catch (smmmidiaError) {
-          console.error('❌ Exceção ao enviar para SMMMIDIA:', smmmidiaError);
-          
-          // Marcar como erro
-          await query(
-            `UPDATE orders 
-             SET status = 'error',
-                 error_message = ?,
-                 updated_at = datetime('now')
-             WHERE id = ?`,
-            [smmmidiaError.message, externalReference]
-          );
-        }
-      } else if (status === 'approved') {
-        console.log('ℹ️ Pagamento já foi processado anteriormente (status atual: completed)');
-      }
+      // Não enviar para SMMMIDIA - apenas marcar como concluído
+      console.log('ℹ️ Pedido marcado como concluído. Integração com SMMMIDIA desabilitada.');
     } else {
       console.log('⚠️ Tipo de notificação ignorado:', type, action);
     }

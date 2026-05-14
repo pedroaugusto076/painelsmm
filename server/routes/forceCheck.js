@@ -44,66 +44,24 @@ router.get('/check-all', async (req, res) => {
         console.log(`📊 Status do pagamento: ${status}`);
 
         if (status === 'approved' && order.status !== 'completed') {
-          console.log('✅ PAGAMENTO APROVADO! Processando...');
+          console.log('✅ PAGAMENTO APROVADO! Marcando como concluído...');
 
-          // Construir link do Instagram
-          let instagramLink = '';
-          if (order.service_type === 'followers') {
-            instagramLink = `https://instagram.com/${order.instagram_username}`;
-          } else {
-            instagramLink = order.post_url;
-          }
-
-          console.log('📤 Enviando para SMMMIDIA:', instagramLink);
-
-          // Enviar para SMMMIDIA
-          const smmmidiaResult = await smmmidiaService.createOrder(
-            order.service_type,
-            instagramLink,
-            order.quantity
+          // Atualizar pedido como concluído (SEM enviar para SMMMIDIA)
+          await query(
+            `UPDATE orders 
+             SET status = 'completed',
+                 payment_status = ?,
+                 updated_at = datetime('now')
+             WHERE id = ?`,
+            [status, order.id]
           );
 
-          if (smmmidiaResult.success) {
-            console.log('✅ Enviado para SMMMIDIA! Order ID:', smmmidiaResult.orderId);
-
-            // Atualizar pedido
-            await query(
-              `UPDATE orders 
-               SET status = 'completed',
-                   payment_status = ?,
-                   smmmidia_order_id = ?,
-                   updated_at = datetime('now')
-               WHERE id = ?`,
-              [status, smmmidiaResult.orderId, order.id]
-            );
-
-            updates.push({
-              orderId: order.id,
-              paymentId: order.payment_id,
-              status: 'completed',
-              smmmidiaOrderId: smmmidiaResult.orderId,
-              message: '✅ Pagamento confirmado e pedido enviado!'
-            });
-          } else {
-            console.error('❌ Erro SMMMIDIA:', smmmidiaResult.error);
-
-            await query(
-              `UPDATE orders 
-               SET status = 'error',
-                   payment_status = ?,
-                   error_message = ?,
-                   updated_at = datetime('now')
-               WHERE id = ?`,
-              [status, smmmidiaResult.error, order.id]
-            );
-
-            updates.push({
-              orderId: order.id,
-              paymentId: order.payment_id,
-              status: 'error',
-              error: smmmidiaResult.error
-            });
-          }
+          updates.push({
+            orderId: order.id,
+            paymentId: order.payment_id,
+            status: 'completed',
+            message: '✅ Pagamento confirmado e pedido concluído!'
+          });
         } else if (status === 'approved') {
           updates.push({
             orderId: order.id,
