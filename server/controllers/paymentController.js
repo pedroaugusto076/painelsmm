@@ -358,7 +358,7 @@ export const getUserOrders = async (req, res) => {
     const result = await query(
       `SELECT id, service_type, package_id, quantity, price, instagram_username, 
               status, payment_status, created_at, updated_at, payment_id, 
-              smmmidia_order_id, error_message
+              error_message
        FROM orders 
        WHERE user_id = ? 
        ORDER BY created_at DESC
@@ -434,67 +434,29 @@ export const checkPendingPayments = async (req, res) => {
         // Atualizar status do pedido
         let orderStatus = order.status;
         if (status === 'approved' && order.status !== 'completed') {
-          orderStatus = 'processing';
+          orderStatus = 'completed';
 
-          // Enviar para SMMMIDIA
-          let instagramLink = '';
-          if (order.service_type === 'followers') {
-            instagramLink = `https://instagram.com/${order.instagram_username}`;
-          } else {
-            instagramLink = order.post_url;
-          }
+          console.log('✅ Pagamento aprovado! Atualizando para completed');
 
-          console.log('🚀 Enviando para SMMMIDIA:', instagramLink);
-
-          const smmmidiaResult = await smmmidiaService.createOrder(
-            order.service_type,
-            instagramLink,
-            order.quantity
+          await query(
+            `UPDATE orders 
+             SET status = 'completed',
+                 payment_status = ?,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            [status, order.id]
           );
 
-          if (smmmidiaResult.success) {
-            console.log('✅ Enviado! Order ID:', smmmidiaResult.orderId);
-
-            await query(
-              `UPDATE orders 
-               SET status = 'completed',
-                   payment_status = ?,
-                   smmmidia_order_id = ?,
-                   updated_at = datetime('now')
-               WHERE id = ?`,
-              [status, smmmidiaResult.orderId, order.id]
-            );
-
-            updates.push({
-              orderId: order.id,
-              status: 'completed',
-              smmmidiaOrderId: smmmidiaResult.orderId
-            });
-          } else {
-            console.error('❌ Erro SMMMIDIA:', smmmidiaResult.error);
-
-            await query(
-              `UPDATE orders 
-               SET status = 'error',
-                   payment_status = ?,
-                   error_message = ?,
-                   updated_at = datetime('now')
-               WHERE id = ?`,
-              [status, smmmidiaResult.error, order.id]
-            );
-
-            updates.push({
-              orderId: order.id,
-              status: 'error',
-              error: smmmidiaResult.error
-            });
-          }
+          updates.push({
+            orderId: order.id,
+            status: 'completed'
+          });
         } else if (status === 'rejected' || status === 'cancelled') {
           await query(
             `UPDATE orders 
              SET status = 'cancelled',
                  payment_status = ?,
-                 updated_at = datetime('now')
+                 updated_at = CURRENT_TIMESTAMP
              WHERE id = ?`,
             [status, order.id]
           );
@@ -508,7 +470,7 @@ export const checkPendingPayments = async (req, res) => {
           await query(
             `UPDATE orders 
              SET payment_status = ?,
-                 updated_at = datetime('now')
+                 updated_at = CURRENT_TIMESTAMP
              WHERE id = ?`,
             [status, order.id]
           );
