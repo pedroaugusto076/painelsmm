@@ -290,7 +290,7 @@ export const handleWebhook = async (req, res) => {
         `UPDATE orders 
          SET status = ?, 
              payment_status = ?,
-             updated_at = datetime('now')
+             updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
         [orderStatus, status, externalReference]
       );
@@ -348,8 +348,9 @@ export const getUserOrders = async (req, res) => {
   try {
     const userId = req.user.id;
     
-    console.log('📋 [DEBUG] Buscando pedidos do usuário:', userId);
-    console.log('📋 [DEBUG] Tipo do userId:', typeof userId);
+    console.log('📋 [GET-ORDERS] Buscando pedidos do usuário:', userId);
+    console.log('📋 [GET-ORDERS] Tipo do userId:', typeof userId);
+    console.log('📋 [GET-ORDERS] User completo:', JSON.stringify(req.user, null, 2));
 
     const result = await query(
       `SELECT id, service_type, package_id, quantity, price, instagram_username, 
@@ -362,10 +363,16 @@ export const getUserOrders = async (req, res) => {
       [userId]
     );
 
-    console.log('✅ [DEBUG] Pedidos encontrados:', result.rows.length);
+    console.log('✅ [GET-ORDERS] Pedidos encontrados:', result.rows.length);
     
     if (result.rows.length > 0) {
-      console.log('📦 [DEBUG] Primeiro pedido:', JSON.stringify(result.rows[0], null, 2));
+      console.log('📦 [GET-ORDERS] Primeiro pedido:', JSON.stringify(result.rows[0], null, 2));
+    } else {
+      console.log('⚠️ [GET-ORDERS] Nenhum pedido encontrado para user_id:', userId);
+      
+      // Debug: buscar todos os pedidos para ver se há algum
+      const allOrders = await query('SELECT id, user_id, status FROM orders LIMIT 5');
+      console.log('🔍 [GET-ORDERS] Primeiros 5 pedidos no banco:', JSON.stringify(allOrders.rows, null, 2));
     }
 
     res.json({
@@ -375,10 +382,11 @@ export const getUserOrders = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ [ERRO] Erro ao listar pedidos:', error);
-    console.error('📋 [ERRO] Message:', error.message);
-    console.error('📋 [ERRO] Stack:', error.stack);
-    console.error('📋 [ERRO] Name:', error.name);
+    console.error('❌ [GET-ORDERS] Erro ao listar pedidos:', error);
+    console.error('📋 [GET-ORDERS] Message:', error.message);
+    console.error('📋 [GET-ORDERS] Stack:', error.stack);
+    console.error('📋 [GET-ORDERS] Name:', error.name);
+    console.error('📋 [GET-ORDERS] Code:', error.code);
     
     // Tentar retornar array vazio em caso de erro
     res.status(200).json({
@@ -386,7 +394,8 @@ export const getUserOrders = async (req, res) => {
       data: {
         orders: []
       },
-      warning: 'Erro ao buscar pedidos, retornando lista vazia'
+      warning: 'Erro ao buscar pedidos, retornando lista vazia',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
