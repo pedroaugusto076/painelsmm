@@ -97,13 +97,24 @@ const AdminPanel: React.FC = () => {
       const response = await adminApi.approveOrder(orderId);
 
       if (response.success) {
-        alert('Pedido aprovado e enviado ao fornecedor com sucesso!');
+        // Mostrar resposta detalhada do fornecedor
+        const smmmidiaData = response.data;
+        const message = `✅ Pedido enviado com sucesso!
+        
+📋 Detalhes:
+• ID Local: ${smmmidiaData.orderId}
+• ID SMMMIDIA: ${smmmidiaData.smmmidiaOrderId}
+
+📊 Resposta do Fornecedor:
+${JSON.stringify(smmmidiaData.smmmidiaResponse, null, 2)}`;
+        
+        alert(message);
         loadData();
       } else {
-        alert(`Erro: ${response.message}`);
+        alert(`❌ Erro: ${response.message}`);
       }
     } catch (error: any) {
-      alert(`Erro ao aprovar pedido: ${error.message}`);
+      alert(`❌ Erro ao aprovar pedido: ${error.message}`);
     } finally {
       setActionLoading(null);
     }
@@ -378,6 +389,7 @@ const AdminPanel: React.FC = () => {
                               onClick={() => handleApproveOrder(order.id)}
                               disabled={actionLoading === order.id}
                               className="inline-flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                              title="Enviar pedido para o fornecedor"
                             >
                               {actionLoading === order.id ? (
                                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -387,11 +399,27 @@ const AdminPanel: React.FC = () => {
                               Enviar
                             </button>
                           )}
+                          {order.status === 'completed' && order.error_message && (
+                            <button
+                              onClick={() => handleApproveOrder(order.id)}
+                              disabled={actionLoading === order.id}
+                              className="inline-flex items-center gap-1 px-3 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
+                              title="Reenviar pedido para o fornecedor"
+                            >
+                              {actionLoading === order.id ? (
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <RefreshCw className="w-4 h-4" />
+                              )}
+                              Reenviar
+                            </button>
+                          )}
                           {order.status !== 'cancelled' && (
                             <button
                               onClick={() => handleCancelOrder(order.id)}
                               disabled={actionLoading === order.id}
                               className="inline-flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                              title="Cancelar pedido"
                             >
                               <XCircle className="w-4 h-4" />
                               Cancelar
@@ -400,6 +428,7 @@ const AdminPanel: React.FC = () => {
                           <button
                             onClick={() => setSelectedOrder(order)}
                             className="inline-flex items-center gap-1 px-3 py-1 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                            title="Ver detalhes completos"
                           >
                             <Eye className="w-4 h-4" />
                             Ver
