@@ -87,20 +87,17 @@ module.exports = async function handler(req, res) {
     }
 
     // Aqui você integraria com Mercado Pago
-    // Por enquanto, retornar sucesso
+    // Por enquanto, retornar dados mockados para teste
     return res.status(201).json({
       success: true,
       message: 'Pedido criado com sucesso!',
       data: {
-        order: {
-          id: order.id,
-          status: order.status,
-          payment_status: order.payment_status
-        },
-        payment: {
-          // Dados do pagamento viriam do Mercado Pago
-          payment_url: 'https://mercadopago.com/checkout/...'
-        }
+        orderId: order.id,
+        paymentId: order.id, // Usar o mesmo ID por enquanto
+        amount: price,
+        pixQrCode: 'PIX_CODE_MOCK_' + order.id,
+        pixQrCodeBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', // 1x1 pixel transparente
+        status: 'pending'
       }
     });
   } catch (error) {
