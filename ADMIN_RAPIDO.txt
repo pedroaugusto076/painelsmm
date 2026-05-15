@@ -1,0 +1,108 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    🔐 CRIAR ADMIN - GUIA RÁPIDO                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+⏱️  TEMPO: 2 minutos
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           📋 PASSO A PASSO                                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+1️⃣  Acesse: https://supabase.com
+    └─> Faça login
+    └─> Selecione seu projeto
+
+2️⃣  Abra o SQL Editor
+    └─> Menu lateral: SQL Editor
+    └─> Clique em: New query
+
+3️⃣  Cole este SQL (ALTERE O EMAIL!):
+
+INSERT INTO users (name, email, password_hash, is_admin, role, email_verified, is_active)
+VALUES (
+  'Administrador',
+  'SEU-EMAIL@AQUI.COM',
+  '$2a$10$u1KFYUvrAlqj0Ep5cp9X/enBqFHMvKH3m5EHIwwtSv.cXj/QAihUu',
+  TRUE,
+  'admin',
+  TRUE,
+  TRUE
+)
+ON CONFLICT (email) DO UPDATE SET
+  is_admin = TRUE,
+  role = 'admin',
+  email_verified = TRUE;
+
+4️⃣  Execute (RUN ou Ctrl+Enter)
+
+5️⃣  Faça login em: https://painelsmm-two.vercel.app
+    └─> Email: SEU-EMAIL@AQUI.COM
+    └─> Senha: Admin@2024
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                         🔑 CREDENCIAIS CRIADAS                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Email: (o que você colocar no SQL)
+Senha: Admin@2024
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    🔄 ALTERNATIVA: TORNAR USUÁRIO ADMIN                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Se você já tem uma conta:
+
+UPDATE users
+SET is_admin = TRUE, role = 'admin', email_verified = TRUE
+WHERE email = 'seu-email@exemplo.com';
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           ✅ VERIFICAR                                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Execute no Supabase:
+
+SELECT id, name, email, is_admin, role
+FROM users
+WHERE is_admin = TRUE;
+
+Deve mostrar seu usuário admin!
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                         🎯 ACESSAR O PAINEL                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+1. Acesse: https://painelsmm-two.vercel.app
+2. Clique em "Login"
+3. Use email e senha criados
+4. Será redirecionado para /admin automaticamente
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                          🐛 PROBLEMAS?                                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+❌ Email já existe?
+   └─> Use a alternativa: UPDATE users SET is_admin = TRUE...
+
+❌ Tabela não existe?
+   └─> Execute o supabase_schema.sql primeiro
+
+❌ Não redireciona para /admin?
+   └─> Limpe o cache e faça login novamente
+
+❌ Não consigo acessar /admin diretamente?
+   └─> Você precisa fazer login primeiro
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                        📁 ARQUIVOS CRIADOS                                   ║
+╚══════════════════════════════════════════════════════════════════════════════╗
+
+✅ CRIAR_ADMIN.sql - SQL completo pronto para executar
+✅ COMO_ADICIONAR_ADMIN.md - Guia detalhado
+✅ ADMIN_RAPIDO.txt - Este arquivo (resumo)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+RESUMO: Execute o SQL no Supabase, faça login e pronto! 🚀
+
+═══════════════════════════════════════════════════════════════════════════════
