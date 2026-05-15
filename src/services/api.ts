@@ -205,7 +205,7 @@ export const paymentApi = {
 
   // Buscar status do pagamento
   getPaymentStatus: async (orderId: string): Promise<ApiResponse<{ order: any }>> => {
-    return apiRequest(`/payments/status/${orderId}`, {
+    return apiRequest(`/payments/status?orderId=${orderId}`, {
       method: 'GET',
     });
   },
