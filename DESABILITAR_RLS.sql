@@ -5,52 +5,23 @@
 -- Execute este SQL no Supabase SQL Editor AGORA!
 -- ============================================
 
--- Desabilitar RLS na tabela users
+-- Desabilitar RLS em TODAS as tabelas
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE orders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE payments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE auth_attempts DISABLE ROW LEVEL SECURITY;
+ALTER TABLE password_resets DISABLE ROW LEVEL SECURITY;
 
 -- Verificar se foi desabilitado
 SELECT tablename, rowsecurity 
 FROM pg_tables 
 WHERE schemaname = 'public' 
-AND tablename = 'users';
+AND tablename IN ('users', 'orders', 'payments', 'auth_attempts', 'password_resets');
 
--- Resultado esperado: rowsecurity = false
-
--- ============================================
--- ALTERNATIVA: Criar política permissiva
--- ============================================
--- Se preferir manter RLS ativo mas permitir inserções:
-
-/*
--- Habilitar RLS
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-
--- Criar política para permitir INSERT de qualquer um
-CREATE POLICY "Permitir INSERT público" 
-ON users 
-FOR INSERT 
-TO anon, authenticated
-WITH CHECK (true);
-
--- Criar política para permitir SELECT de qualquer um
-CREATE POLICY "Permitir SELECT público" 
-ON users 
-FOR SELECT 
-TO anon, authenticated
-USING (true);
-
--- Criar política para permitir UPDATE do próprio usuário
-CREATE POLICY "Permitir UPDATE próprio usuário" 
-ON users 
-FOR UPDATE 
-TO authenticated
-USING (auth.uid()::text = id)
-WITH CHECK (auth.uid()::text = id);
-*/
+-- Resultado esperado: rowsecurity = false para todas
 
 -- ============================================
--- RECOMENDAÇÃO: DESABILITAR RLS
+-- IMPORTANTE: Execute este SQL AGORA!
 -- ============================================
--- Para este projeto, é mais simples desabilitar o RLS
--- porque você está usando JWT próprio, não o auth do Supabase
+-- Sem isso, nenhuma inserção vai funcionar
 -- ============================================
