@@ -1,95 +1,131 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
+const crypto = require('crypto');
 
 module.exports = async function handler(req, res) {
+  // CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, message: 'Method not allowed' });
+    return res.status(405).json({
+      success: false,
+      message: 'Method not allowed'
+    });
   }
 
   try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: 'Todos os campos são obrigatórios' });
-    }
-
-    if (password.length < 8) {
-      return res.status(400).json({ success: false, message: 'Senha deve ter pelo menos 8 caracteres' });
-    }
-
     const supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_ANON_KEY
     );
 
-    // Registrar com Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: email.toLowerCase().trim(),
-      password: password,
-      options: {
-        data: {
-          name: name.trim()
-        }
-      }
-    });
+    const { name, email, password } = req.body;
 
-    if (authError) {
-      console.error('Erro auth:', authError);
-      
-      if (authError.message.includes('already registered')) {
-        return res.status(409).json({
-          success: false,
-          message: 'Este email já está cadastrado. Tente fazer login.'
-        });
-      }
-      
+    // Validação
+    if (!name || name.trim().length < 2) {
       return res.status(400).json({
         success: false,
-        message: authError.message
+        message: 'Nome deve ter pelo menos 2 caracteres'
       });
     }
 
-    // Criar registro na tabela users
-    const { error: insertError } = await supabase
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email inválido'
+      });
+    }
+
+    if (!password || password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'Senha deve ter pelo menos 8 caracteres'
+      });
+    }
+
+    // Verificar se email já existe
+    const { data: existingUsers, error: checkError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase().trim())
+      .limit(1);
+
+    if (checkError) {
+      console.error('Erro ao verificar email:', checkError);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao verificar email'
+      });
+    }
+
+    if (existingUsers && existingUsers.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Este email já está cadastrado. Tente fazer login.'
+      });
+    }
+
+    // Hash da senha
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
+    // Gerar ID único
+    const userId = crypto.randomUUID();
+
+    // Inserir usuário
+    const { data: newUser, error: insertError } = await supabase
       .from('users')
       .insert({
-        id: authData.user.id,
+        id: userId,
         name: name.trim(),
         email: email.toLowerCase().trim(),
-        password_hash: 'managed_by_supabase_auth'
-      });
+        password_hash: passwordHash
+      })
+      .select('id, name, email, created_at')
+      .single();
 
     if (insertError) {
-      console.error('Erro ao inserir na tabela users:', insertError);
+      console.error('Erro ao inserir usuário:', insertError);
+      return res.status(500).json({
+        success: false,
+        message: 'Não foi possível completar o cadastro'
+      });
     }
+
+    // Gerar token
+    const token = jwt.sign(
+      { userId: newUser.id },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
 
     return res.status(201).json({
       success: true,
       message: 'Cadastro realizado com sucesso!',
       data: {
         user: {
-          id: authData.user.id,
-          name: name.trim(),
-          email: authData.user.email,
-          createdAt: authData.user.created_at
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          createdAt: newUser.created_at
         },
-        token: authData.session?.access_token
+        token
       }
     });
   } catch (error) {
-    console.error('Erro:', error);
+    console.error('Erro no registro:', error);
     return res.status(500).json({
       success: false,
-      message: 'Não foi possível completar o cadastro',
-      error: error.message
+      message: 'Não foi possível completar o cadastro. Tente novamente mais tarde.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
