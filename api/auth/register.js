@@ -1,6 +1,6 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { createClient } from '@supabase/supabase-js';
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -15,7 +15,7 @@ const generateToken = (userId) => {
   );
 };
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -85,7 +85,7 @@ export default async function handler(req, res) {
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
     // Gerar ID único
-    const crypto = await import('crypto');
+    const crypto = require('crypto');
     const userId = crypto.randomUUID();
 
     // Inserir usuário
@@ -132,4 +132,4 @@ export default async function handler(req, res) {
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
-}
+};
