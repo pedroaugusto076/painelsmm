@@ -1,0 +1,137 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║                    🚨 COMECE AQUI 🚨                             ║
+║                                                                  ║
+║              O login não funciona porque você                    ║
+║         NÃO CONFIGUROU as variáveis no Vercel ainda!            ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│  PASSO 1: TESTE SE AS VARIÁVEIS ESTÃO CONFIGURADAS              │
+│                                                                  │
+│  Abra esta URL no navegador:                                    │
+│  https://painelsmm-two.vercel.app/api/test-env                  │
+│                                                                  │
+│  Se mostrar "MISSING" → Você precisa configurar!                │
+│  Se mostrar "configured" → Está tudo certo!                     │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│  PASSO 2: CONFIGURAR VARIÁVEIS NO VERCEL                        │
+│                                                                  │
+│  1. Acesse: https://vercel.com                                  │
+│  2. Clique no projeto: painelsmm-two                            │
+│  3. Clique em: Settings                                         │
+│  4. Clique em: Environment Variables                            │
+│  5. Adicione CADA variável abaixo:                              │
+│                                                                  │
+│     SUPABASE_URL                                                │
+│     SUPABASE_ANON_KEY                                           │
+│     JWT_SECRET                                                  │
+│     JWT_EXPIRES_IN                                              │
+│     NODE_ENV                                                    │
+│     FRONTEND_URL                                                │
+│     BACKEND_URL                                                 │
+│     MERCADOPAGO_ACCESS_TOKEN                                    │
+│     MERCADOPAGO_WEBHOOK_SECRET                                  │
+│     SMMMIDIA_API_URL                                            │
+│     SMMMIDIA_API_KEY                                            │
+│     SMMMIDIA_SERVICE_ID                                         │
+│     RESEND_API_KEY                                              │
+│     EMAIL_FROM                                                  │
+│                                                                  │
+│  6. Para CADA variável:                                         │
+│     - Clique em "Add New"                                       │
+│     - Cole o nome da variável                                   │
+│     - Cole o valor (veja arquivo TESTE_RAPIDO.md)              │
+│     - Marque: Production, Preview, Development                  │
+│     - Clique em Save                                            │
+│                                                                  │
+│  7. Depois de adicionar TODAS, vá em Deployments                │
+│  8. Clique nos 3 pontinhos do último deploy                     │
+│  9. Clique em "Redeploy"                                        │
+│  10. Aguarde 2 minutos                                          │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│  PASSO 3: TESTE NOVAMENTE                                       │
+│                                                                  │
+│  Abra: https://painelsmm-two.vercel.app/api/test-env            │
+│                                                                  │
+│  Deve mostrar:                                                  │
+│  "✅ Todas as variáveis críticas estão configuradas"            │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│  PASSO 4: ATUALIZAR SENHA NO SUPABASE                           │
+│                                                                  │
+│  1. Acesse: https://supabase.com/dashboard                      │
+│  2. Abra seu projeto                                            │
+│  3. Vá em: SQL Editor                                           │
+│  4. Cole e execute:                                             │
+│                                                                  │
+│     UPDATE users                                                │
+│     SET password_hash = '$2a$10$u1KFYUvrAlqj0Ep5cp9X/...'      │
+│     WHERE email = 'userpedro111@gmail.com';                     │
+│                                                                  │
+│  (SQL completo está no arquivo ATUALIZAR_SENHA_ADMIN.sql)      │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│  PASSO 5: FAZER LOGIN                                           │
+│                                                                  │
+│  1. Acesse: https://painelsmm-two.vercel.app                    │
+│  2. Faça login:                                                 │
+│     Email: userpedro111@gmail.com                               │
+│     Senha: Admin@2024                                           │
+│  3. Você deve ir para: /admin                                   │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║  📁 ARQUIVOS DE AJUDA:                                           ║
+║                                                                  ║
+║  • TESTE_RAPIDO.md - Guia completo com valores das variáveis    ║
+║  • ATUALIZAR_SENHA_ADMIN.sql - SQL para copiar e colar          ║
+║  • CHECKLIST_URGENTE.txt - Checklist visual                     ║
+║  • RESUMO_FINAL.md - Resumo executivo                           ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║  ⚠️  POR QUE O LOGIN NÃO FUNCIONA?                              ║
+║                                                                  ║
+║  O código está CORRETO e no GitHub.                             ║
+║  O Vercel fez deploy automaticamente.                           ║
+║                                                                  ║
+║  MAS o backend precisa das variáveis de ambiente para           ║
+║  conectar no Supabase. Sem elas, ele não consegue acessar       ║
+║  o banco de dados e retorna erro 401/500.                       ║
+║                                                                  ║
+║  É como ter um carro sem gasolina - tudo está pronto,           ║
+║  mas falta o combustível (variáveis de ambiente).               ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+
+TEMPO ESTIMADO: 10-15 minutos
+STATUS: Aguardando você configurar as variáveis no Vercel
