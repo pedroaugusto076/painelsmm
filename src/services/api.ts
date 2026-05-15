@@ -258,14 +258,14 @@ export const adminApi = {
     orderId: string;
     smmmidiaOrderId: string;
   }>> => {
-    return apiRequest(`/admin/orders/${orderId}/approve`, {
+    return apiRequest(`/admin/approve/${orderId}`, {
       method: 'POST',
     });
   },
 
   // Cancelar pedido
   cancelOrder: async (orderId: string, reason?: string): Promise<ApiResponse> => {
-    return apiRequest(`/admin/orders/${orderId}/cancel`, {
+    return apiRequest(`/admin/cancel/${orderId}`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
