@@ -111,7 +111,23 @@ ${JSON.stringify(smmmidiaData.smmmidiaResponse, null, 2)}`;
         alert(message);
         loadData();
       } else {
-        alert(`❌ Erro: ${response.message}`);
+        // Mostrar erro detalhado
+        let errorMessage = `❌ Erro: ${response.message}`;
+        
+        if (response.error) {
+          errorMessage += `\n\n🔍 Detalhes do Erro:\n${response.error}`;
+        }
+        
+        if (response.details) {
+          errorMessage += `\n\n⚙️ Configuração:`;
+          errorMessage += `\n• API Configurada: ${response.details.apiConfigured ? 'Sim' : 'Não'}`;
+          errorMessage += `\n• API URL: ${response.details.apiUrl}`;
+          errorMessage += `\n• Serviço: ${response.details.serviceType}`;
+          errorMessage += `\n• Link: ${response.details.link}`;
+          errorMessage += `\n• Quantidade: ${response.details.quantity}`;
+        }
+        
+        alert(errorMessage);
       }
     } catch (error: any) {
       alert(`❌ Erro ao aprovar pedido: ${error.message}`);

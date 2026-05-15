@@ -178,7 +178,14 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({
         success: false,
         message: 'Erro ao enviar para o fornecedor',
-        error: smmmidiaResult.error
+        error: smmmidiaResult.error,
+        details: {
+          serviceType: order.service_type,
+          link: link,
+          quantity: order.quantity,
+          apiConfigured: !!process.env.SMMMIDIA_API_KEY,
+          apiUrl: process.env.SMMMIDIA_API_URL || 'https://smmmidia.com/api/v2'
+        }
       });
     }
 
