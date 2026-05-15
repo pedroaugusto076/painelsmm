@@ -73,7 +73,10 @@ async function apiRequest<T>(
         throw error;
       }
       
-      throw new Error(data.message || 'Erro na requisição');
+      // Criar erro com todos os dados da resposta
+      const error: any = new Error(data.message || 'Erro na requisição');
+      error.response = data; // Preservar toda a resposta
+      throw error;
     }
 
     return data;

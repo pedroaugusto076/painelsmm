@@ -135,7 +135,32 @@ ${JSON.stringify(smmmidiaData.smmmidiaResponse, null, 2)}`;
         alert(errorMessage);
       }
     } catch (error: any) {
-      alert(`❌ Erro ao aprovar pedido: ${error.message}`);
+      console.error('❌ [ADMIN] Erro ao aprovar pedido:', error);
+      
+      // Tentar pegar detalhes da resposta
+      const response = error.response || {};
+      
+      let errorMessage = `❌ Erro ao aprovar pedido: ${error.message}`;
+      
+      if (response.error) {
+        errorMessage += `\n\n🔍 Erro Específico:\n${response.error}`;
+      }
+      
+      if (response.apiResponse) {
+        errorMessage += `\n\n📡 Resposta da API SMMMIDIA:\n${JSON.stringify(response.apiResponse, null, 2)}`;
+      }
+      
+      if (response.details) {
+        errorMessage += `\n\n⚙️ Configuração:`;
+        errorMessage += `\n• API Configurada: ${response.details.apiConfigured ? 'Sim ✅' : 'Não ❌'}`;
+        errorMessage += `\n• API URL: ${response.details.apiUrl}`;
+        errorMessage += `\n• Serviço: ${response.details.serviceType}`;
+        errorMessage += `\n• Service ID: ${response.details.serviceId}`;
+        errorMessage += `\n• Link: ${response.details.link}`;
+        errorMessage += `\n• Quantidade: ${response.details.quantity}`;
+      }
+      
+      alert(errorMessage);
     } finally {
       setActionLoading(null);
     }
