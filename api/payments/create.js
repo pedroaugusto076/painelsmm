@@ -2,6 +2,52 @@ const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 
+// Função para criar pagamento no Mercado Pago
+async function createMercadoPagoPayment(amount, orderId, description) {
+  try {
+    const fetch = (await import('node-fetch')).default;
+    
+    const response = await fetch('https://api.mercadopago.com/v1/payments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`
+      },
+      body: JSON.stringify({
+        transaction_amount: amount,
+        description: description,
+        payment_method_id: 'pix',
+        payer: {
+          email: 'cliente@email.com'
+        },
+        external_reference: orderId,
+        notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`
+      })
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('Erro Mercado Pago:', data);
+      throw new Error(data.message || 'Erro ao criar pagamento');
+    }
+
+    return {
+      success: true,
+      paymentId: data.id,
+      pixQrCode: data.point_of_interaction?.transaction_data?.qr_code,
+      pixQrCodeBase64: data.point_of_interaction?.transaction_data?.qr_code_base64,
+      status: data.status
+    };
+  } catch (error) {
+    console.error('Erro ao criar pagamento MP:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -86,17 +132,35 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Aqui você integraria com Mercado Pago
-    // Por enquanto, retornar dados mockados para teste
+    // Criar pagamento no Mercado Pago
+    const description = `${serviceType} - ${quantity} unidades`;
+    const mpResult = await createMercadoPagoPayment(price, orderId, description);
+
+    if (!mpResult.success) {
+      // Se falhar, deletar o pedido
+      await supabase.from('orders').delete().eq('id', orderId);
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao gerar PIX: ' + mpResult.error
+      });
+    }
+
+    // Atualizar pedido com payment_id
+    await supabase
+      .from('orders')
+      .update({ payment_id: mpResult.paymentId.toString() })
+      .eq('id', orderId);
+
     return res.status(201).json({
       success: true,
       message: 'Pedido criado com sucesso!',
       data: {
         orderId: order.id,
-        paymentId: order.id, // Usar o mesmo ID por enquanto
+        paymentId: mpResult.paymentId,
         amount: price,
-        pixQrCode: 'PIX_CODE_MOCK_' + order.id,
-        pixQrCodeBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', // 1x1 pixel transparente
+        pixQrCode: mpResult.pixQrCode,
+        pixQrCodeBase64: mpResult.pixQrCodeBase64,
         status: 'pending'
       }
     });
