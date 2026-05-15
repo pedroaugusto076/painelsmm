@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Login - Debug</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #0070f3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #0051cc;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .step {
+            background: #e7f3ff;
+            padding: 15px;
+            border-left: 4px solid #0070f3;
+            margin-bottom: 20px;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #0070f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Login - Debug</h1>
+        <p class="subtitle">Use este formulário para testar o login e ver detalhes técnicos</p>
+
+        <div class="step">
+            <h3>📋 Passo 1: Atualizar Senha no Supabase</h3>
+            <p>Antes de testar, execute este SQL no Supabase SQL Editor:</p>
+            <pre>UPDATE users 
+SET password_hash = '$2a$10$u1KFYUvrAlqj0Ep5cp9X/enBqFHMvKH3m5EHIwwtSv.cXj/QAihUu'
+WHERE email = 'userpedro111@gmail.com';</pre>
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="userpedro111@gmail.com" placeholder="seu@email.com">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Senha:</label>
+            <input type="password" id="password" value="Admin@2024" placeholder="Sua senha">
+        </div>
+
+        <button onclick="testLogin()" id="testBtn">🧪 Testar Login (Debug)</button>
+        <button onclick="realLogin()" id="realBtn">🔐 Login Real (API Oficial)</button>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        async function testLogin() {
+            const btn = document.getElementById('testBtn');
+            const result = document.getElementById('result');
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Testando...';
+            result.style.display = 'none';
+            
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                const response = await fetch('/api/test-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                result.style.display = 'block';
+                
+                if (data.success && data.passwordValid) {
+                    result.className = 'result success';
+                    result.innerHTML = `
+                        <h3>✅ Login Válido!</h3>
+                        <p><strong>Usuário encontrado e senha correta!</strong></p>
+                        <p>Agora você pode fazer login normalmente.</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else if (data.success && !data.passwordValid) {
+                    result.className = 'result error';
+                    result.innerHTML = `
+                        <h3>❌ Senha Incorreta</h3>
+                        <p><strong>Usuário encontrado, mas a senha está errada.</strong></p>
+                        <p>Execute o SQL no Supabase para atualizar a senha:</p>
+                        <pre>UPDATE users 
+SET password_hash = '$2a$10$u1KFYUvrAlqj0Ep5cp9X/enBqFHMvKH3m5EHIwwtSv.cXj/QAihUu'
+WHERE email = 'userpedro111@gmail.com';</pre>
+                        <p>Hash atual: <code>${data.user.hash_preview}...</code></p>
+                    `;
+                } else {
+                    result.className = 'result error';
+                    result.innerHTML = `
+                        <h3>❌ Erro</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+                
+            } catch (error) {
+                result.style.display = 'block';
+                result.className = 'result error';
+                result.innerHTML = `
+                    <h3>❌ Erro de Conexão</h3>
+                    <p>${error.message}</p>
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🧪 Testar Login (Debug)';
+            }
+        }
+
+        async function realLogin() {
+            const btn = document.getElementById('realBtn');
+            const result = document.getElementById('result');
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Fazendo login...';
+            result.style.display = 'none';
+            
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                result.style.display = 'block';
+                
+                if (data.success) {
+                    result.className = 'result success';
+                    result.innerHTML = `
+                        <h3>✅ Login Realizado com Sucesso!</h3>
+                        <p><strong>Token JWT gerado!</strong></p>
+                        <p>Redirecionando para o painel admin...</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    
+                    // Salvar token e redirecionar
+                    localStorage.setItem('token', data.data.token);
+                    setTimeout(() => {
+                        window.location.href = '/admin';
+                    }, 2000);
+                } else {
+                    result.className = 'result error';
+                    result.innerHTML = `
+                        <h3>❌ Erro no Login</h3>
+                        <p>${data.message || 'Erro desconhecido'}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+                
+            } catch (error) {
+                result.style.display = 'block';
+                result.className = 'result error';
+                result.innerHTML = `
+                    <h3>❌ Erro de Conexão</h3>
+                    <p>${error.message}</p>
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔐 Login Real (API Oficial)';
+            }
+        }
+    </script>
+</body>
+</html>
