@@ -11,7 +11,8 @@ async function createMercadoPagoPayment(amount, orderId, description) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`
+        'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+        'X-Idempotency-Key': orderId // Usar orderId como chave de idempotência
       },
       body: JSON.stringify({
         transaction_amount: amount,
