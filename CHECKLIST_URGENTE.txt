@@ -1,0 +1,135 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                    ⚠️  CHECKLIST URGENTE ⚠️                      ║
+║              O QUE VOCÊ PRECISA FAZER AGORA                      ║
+╚══════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────┐
+│ ✅ JÁ FEITO (pelo Kiro)                                          │
+├──────────────────────────────────────────────────────────────────┤
+│ ✅ Código corrigido (database.js)                                │
+│ ✅ Commit criado                                                 │
+│ ✅ Push para GitHub                                              │
+│ ✅ Documentação criada                                           │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ ⏳ VOCÊ PRECISA FAZER AGORA                                      │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ 1️⃣  CONFIGURAR VARIÁVEIS NO VERCEL (CRÍTICO!)                   │
+│                                                                  │
+│    a) Acesse: https://vercel.com                                │
+│    b) Vá em: Settings > Environment Variables                   │
+│    c) Adicione TODAS estas variáveis:                           │
+│                                                                  │
+│       SUPABASE_URL=https://xicorwjdvlpwjczvtizm.supabase.co    │
+│       SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... │
+│       JWT_SECRET=15ddc9697b23f353fe51eea8f2e152d53a851e93...   │
+│       JWT_EXPIRES_IN=7d                                         │
+│       NODE_ENV=production                                       │
+│       PORT=5000                                                 │
+│       FRONTEND_URL=https://painelsmm-two.vercel.app            │
+│       BACKEND_URL=https://painelsmm-two.vercel.app             │
+│       RESEND_API_KEY=re_YTNSuv2R_BsVZpUMzMdYyb7LaoFTuh1dc      │
+│       EMAIL_FROM=testsmm <onboarding@resend.dev>               │
+│       MERCADOPAGO_ACCESS_TOKEN=APP_USR-2012553697035421...     │
+│       MERCADOPAGO_WEBHOOK_SECRET=759ac5eced580306f89ef0545...  │
+│       SMMMIDIA_API_URL=https://smmmidia.com/api/v2             │
+│       SMMMIDIA_API_KEY=f1aba6dc3fde9dbb2f6600840a865c13        │
+│       SMMMIDIA_SERVICE_ID=1353                                 │
+│                                                                  │
+│    d) Selecione: Production, Preview, Development               │
+│    e) Clique em Save                                            │
+│                                                                  │
+│    ⚠️  SEM ISSO O BACKEND NÃO VAI FUNCIONAR!                    │
+│                                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ 2️⃣  ATUALIZAR SENHA NO SUPABASE                                 │
+│                                                                  │
+│    a) Acesse: https://supabase.com/dashboard                    │
+│    b) Vá em: SQL Editor                                         │
+│    c) Execute este SQL:                                         │
+│                                                                  │
+│       UPDATE users                                              │
+│       SET password_hash = '$2a$10$u1KFYUvrAlqj0Ep5cp9X/...'    │
+│       WHERE email = 'userpedro111@gmail.com';                   │
+│                                                                  │
+│    d) Verifique com:                                            │
+│                                                                  │
+│       SELECT email, is_admin, role,                             │
+│              substring(password_hash, 1, 30) as hash            │
+│       FROM users                                                │
+│       WHERE email = 'userpedro111@gmail.com';                   │
+│                                                                  │
+│    ✅ Hash deve começar com: $2a$10$u1KFYUvrAlqj0Ep5cp9X/e     │
+│                                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ 3️⃣  AGUARDAR DEPLOY DO VERCEL                                   │
+│                                                                  │
+│    a) Acesse: https://vercel.com/seu-projeto/deployments       │
+│    b) Aguarde status: Ready ✅                                  │
+│    c) Tempo estimado: 1-2 minutos                               │
+│                                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ 4️⃣  TESTAR O LOGIN                                              │
+│                                                                  │
+│    a) Acesse: https://painelsmm-two.vercel.app                 │
+│    b) Faça login:                                               │
+│       Email: userpedro111@gmail.com                             │
+│       Senha: Admin@2024                                         │
+│    c) Você deve ir para: /admin                                 │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🧪 TESTES RÁPIDOS                                                │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ Teste 1: Health Check                                           │
+│ https://painelsmm-two.vercel.app/api/health                     │
+│ Deve retornar: {"status":"ok"}                                  │
+│                                                                  │
+│ Teste 2: Database Check                                         │
+│ https://painelsmm-two.vercel.app/api/db-check                   │
+│ Deve retornar: {"status":"ok","database":"connected"}           │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 📁 ARQUIVOS DE AJUDA                                             │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ • RESUMO_FINAL.md - Resumo completo                             │
+│ • CORRIGIR_LOGIN_VERCEL.md - Guia detalhado                     │
+│ • ATUALIZAR_SENHA_ADMIN.sql - SQL pronto para copiar            │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ ⚠️  IMPORTANTE                                                   │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ O código JÁ ESTÁ CORRIGIDO e no GitHub.                         │
+│ O Vercel vai fazer deploy automaticamente.                      │
+│                                                                  │
+│ MAS você PRECISA configurar as variáveis de ambiente!           │
+│ Sem elas, o backend não consegue conectar no Supabase.          │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+╔══════════════════════════════════════════════════════════════════╗
+║                    🎯 ORDEM DE EXECUÇÃO                          ║
+╠══════════════════════════════════════════════════════════════════╣
+║  1. Configurar variáveis no Vercel (5 minutos)                  ║
+║  2. Atualizar senha no Supabase (1 minuto)                      ║
+║  3. Aguardar deploy (2 minutos)                                 ║
+║  4. Testar login (1 minuto)                                     ║
+║                                                                  ║
+║  TEMPO TOTAL: ~10 minutos                                       ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Data: 15/05/2026
+Status: Aguardando configuração no Vercel
