@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/authRoutes.js';
 import paymentRoutes from './routes/payments.js';
 import forceCheckRoutes from './routes/forceCheck.js';
+import adminRoutes from './routes/admin.js';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -77,6 +78,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/force-check', forceCheckRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Rota de health check
 app.get('/api/health', (req, res) => {
@@ -86,9 +88,9 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV,
     database: {
-      hasPostgresUrl: !!process.env.POSTGRES_URL,
-      hasVercelEnv: !!process.env.VERCEL,
-      type: (process.env.VERCEL || process.env.POSTGRES_URL) ? 'PostgreSQL' : 'SQLite'
+      type: 'Supabase',
+      hasSupabaseUrl: !!process.env.SUPABASE_URL,
+      hasSupabaseKey: !!process.env.SUPABASE_ANON_KEY
     }
   });
 });
@@ -96,50 +98,43 @@ app.get('/api/health', (req, res) => {
 // Rota de diagnóstico do banco de dados
 app.get('/api/db-check', async (req, res) => {
   try {
-    const { query, isVercel } = await import('./config/database.js');
+    const { query, supabase } = await import('./config/database.js');
     
-    console.log('🔍 [DB-CHECK] Verificando banco de dados...');
-    console.log('🔍 [DB-CHECK] É Vercel?', isVercel);
-    console.log('🔍 [DB-CHECK] POSTGRES_URL?', !!process.env.POSTGRES_URL);
-    console.log('🔍 [DB-CHECK] VERCEL?', !!process.env.VERCEL);
-    
-    // Testar query simples
-    const testResult = await query('SELECT 1 as test');
-    console.log('✅ [DB-CHECK] Query de teste funcionou:', testResult);
+    console.log('🔍 [DB-CHECK] Verificando banco de dados Supabase...');
     
     // Verificar se tabela orders existe
-    let tableCheck;
-    if (isVercel) {
-      tableCheck = await query(`
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' AND table_name = 'orders'
-      `);
-    } else {
-      tableCheck = await query(`
-        SELECT name FROM sqlite_master WHERE type='table' AND name='orders'
-      `);
+    const { data: tableCheck, error: tableError } = await supabase
+      .from('orders')
+      .select('id')
+      .limit(1);
+    
+    if (tableError && tableError.code !== 'PGRST116') {
+      throw tableError;
     }
     
-    console.log('📋 [DB-CHECK] Tabela orders existe?', tableCheck.rows);
-    
     // Contar total de pedidos
-    const countResult = await query('SELECT COUNT(*) as total FROM orders');
-    console.log('📊 [DB-CHECK] Total de pedidos:', countResult.rows);
+    const { count: totalOrders, error: countError } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true });
+    
+    if (countError) throw countError;
     
     // Listar últimos 5 pedidos
-    const ordersResult = await query('SELECT id, user_id, status, created_at FROM orders ORDER BY created_at DESC LIMIT 5');
-    console.log('📦 [DB-CHECK] Últimos pedidos:', ordersResult.rows);
+    const { data: recentOrders, error: ordersError } = await supabase
+      .from('orders')
+      .select('id, user_id, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5);
+    
+    if (ordersError) throw ordersError;
     
     res.json({
       success: true,
       data: {
-        isVercel,
-        hasPostgresUrl: !!process.env.POSTGRES_URL,
-        testQuery: testResult.rows,
-        tableExists: tableCheck.rows.length > 0,
-        totalOrders: countResult.rows[0]?.total || 0,
-        recentOrders: ordersResult.rows
+        database: 'Supabase',
+        tableExists: !tableError,
+        totalOrders: totalOrders || 0,
+        recentOrders: recentOrders || []
       }
     });
   } catch (error) {
@@ -149,8 +144,7 @@ app.get('/api/db-check', async (req, res) => {
       error: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       details: {
-        hasPostgresUrl: !!process.env.POSTGRES_URL,
-        hasVercelEnv: !!process.env.VERCEL,
+        database: 'Supabase',
         errorName: error.name,
         errorCode: error.code
       }

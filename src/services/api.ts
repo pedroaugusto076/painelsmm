@@ -218,4 +218,72 @@ export const paymentApi = {
   },
 };
 
+// Admin API
+export const adminApi = {
+  // Buscar estatísticas
+  getStats: async (): Promise<ApiResponse<{
+    totalOrders: number;
+    ordersByStatus: Record<string, number>;
+    totalRevenue: number;
+    todayOrders: number;
+    totalUsers: number;
+  }>> => {
+    return apiRequest('/admin/stats', {
+      method: 'GET',
+    });
+  },
+
+  // Buscar saldo SMMMIDIA
+  getBalance: async (): Promise<ApiResponse<{
+    balance: string;
+    currency: string;
+  }>> => {
+    return apiRequest('/admin/balance', {
+      method: 'GET',
+    });
+  },
+
+  // Listar todos os pedidos
+  getAllOrders: async (): Promise<ApiResponse<{
+    orders: any[];
+    total: number;
+  }>> => {
+    return apiRequest('/admin/orders', {
+      method: 'GET',
+    });
+  },
+
+  // Aprovar pedido
+  approveOrder: async (orderId: string): Promise<ApiResponse<{
+    orderId: string;
+    smmmidiaOrderId: string;
+  }>> => {
+    return apiRequest(`/admin/orders/${orderId}/approve`, {
+      method: 'POST',
+    });
+  },
+
+  // Cancelar pedido
+  cancelOrder: async (orderId: string, reason?: string): Promise<ApiResponse> => {
+    return apiRequest(`/admin/orders/${orderId}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  // Verificar status do pedido na SMMMIDIA
+  checkOrderStatus: async (orderId: string): Promise<ApiResponse<{
+    orderId: string;
+    localStatus: string;
+    smmmidiaStatus: string;
+    charge: string;
+    startCount: string;
+    remains: string;
+  }>> => {
+    return apiRequest(`/admin/orders/${orderId}/status`, {
+      method: 'GET',
+    });
+  },
+};
+
 export default authApi;

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { authApi } from './services/api';
 import { Dashboard } from './components/Dashboard';
+import AdminPanel from './components/AdminPanel';
 
 const BackgroundEffects = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10 bg-[#fbfbfe]">
@@ -1964,8 +1965,18 @@ export default function App() {
 
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
-    setCurrentPage('dashboard');
+    // Verificar se o usuário é admin
+    const user = authApi.getCurrentUser();
+    if (user && user.role === 'admin') {
+      setCurrentPage('admin');
+    } else {
+      setCurrentPage('dashboard');
+    }
   };
+
+  if (currentPage === 'admin' && isAuthenticated) {
+    return <AdminPanel />;
+  }
 
   if (currentPage === 'dashboard' && isAuthenticated) {
     return <Dashboard onNavigate={handleNavigate} />;

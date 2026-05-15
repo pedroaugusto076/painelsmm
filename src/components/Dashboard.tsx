@@ -18,9 +18,14 @@ import {
   ShieldCheck,
   Clock,
   TrendingUp,
-  Loader2
+  Loader2,
+  Settings,
+  DollarSign,
+  AlertCircle,
+  RefreshCw,
+  XCircle
 } from 'lucide-react';
-import { authApi, paymentApi } from '../services/api';
+import { authApi, paymentApi, adminApi } from '../services/api';
 
 // Modal de Confirmação de Logout
 const LogoutModal: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: () => void }> = ({ isOpen, onClose, onConfirm }) => {
@@ -79,11 +84,27 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
   const [currentTab, setCurrentTab] = useState('servicos');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const userData = authApi.getCurrentUser();
     setUser(userData);
+    
+    // Verificar se é admin (você pode adicionar uma propriedade is_admin no token/user)
+    // Por enquanto, vamos verificar via API
+    checkAdminStatus();
   }, []);
+
+  const checkAdminStatus = async () => {
+    try {
+      const response = await authApi.getProfile();
+      if (response.success && response.data?.user) {
+        setIsAdmin((response.data.user as any).is_admin === true);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar status de admin:', error);
+    }
+  };
 
   const handleLogout = () => {
     authApi.logout();
@@ -96,6 +117,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
     { id: 'pedidos', name: 'Meus Pedidos', icon: ShoppingCart },
     { id: 'api', name: 'API', icon: Target },
     { id: 'perfil', name: 'Perfil', icon: User },
+    ...(isAdmin ? [{ id: 'admin', name: 'Admin', icon: Settings }] : []),
   ];
 
   return (
