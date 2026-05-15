@@ -3,7 +3,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 // Mapeamento de serviços para IDs da SMMMIDIA
 const SERVICE_MAPPING = {
-  followers: process.env.SMMMIDIA_SERVICE_FOLLOWERS || '1353',
+  followers: process.env.SMMMIDIA_SERVICE_ID || process.env.SMMMIDIA_SERVICE_FOLLOWERS || '1353',
   likes: process.env.SMMMIDIA_SERVICE_LIKES || '1354',
   comments: process.env.SMMMIDIA_SERVICE_COMMENTS || '1355',
   views: process.env.SMMMIDIA_SERVICE_VIEWS || '1356'
@@ -42,8 +42,22 @@ async function sendToSMMIDIA(serviceType, link, quantity) {
     
     console.log('✅ Resposta SMMMIDIA:', data);
 
+    // Se a API retornar um erro
     if (data.error) {
-      throw new Error(data.error);
+      return {
+        success: false,
+        error: data.error,
+        apiResponse: data
+      };
+    }
+
+    // Se não tiver o campo 'order', algo deu errado
+    if (!data.order) {
+      return {
+        success: false,
+        error: 'Resposta inválida da API SMMMIDIA',
+        apiResponse: data
+      };
     }
 
     return {
@@ -55,7 +69,8 @@ async function sendToSMMIDIA(serviceType, link, quantity) {
     console.error('❌ Erro SMMMIDIA:', error);
     return {
       success: false,
-      error: error.message
+      error: error.message,
+      apiResponse: null
     };
   }
 }
@@ -165,6 +180,7 @@ module.exports = async function handler(req, res) {
 
     if (!smmmidiaResult.success) {
       console.error('❌ [ADMIN] Erro ao enviar para SMMMIDIA:', smmmidiaResult.error);
+      console.error('📋 [ADMIN] Resposta da API:', smmmidiaResult.apiResponse);
       
       // Salvar erro no banco
       await supabase
@@ -179,8 +195,10 @@ module.exports = async function handler(req, res) {
         success: false,
         message: 'Erro ao enviar para o fornecedor',
         error: smmmidiaResult.error,
+        apiResponse: smmmidiaResult.apiResponse,
         details: {
           serviceType: order.service_type,
+          serviceId: SERVICE_MAPPING[order.service_type],
           link: link,
           quantity: order.quantity,
           apiConfigured: !!process.env.SMMMIDIA_API_KEY,
