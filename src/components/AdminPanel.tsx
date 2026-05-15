@@ -445,21 +445,6 @@ ${JSON.stringify(smmmidiaData.smmmidiaResponse, null, 2)}`;
                               Enviar
                             </button>
                           )}
-                          {order.status === 'completed' && order.error_message && (
-                            <button
-                              onClick={() => handleApproveOrder(order.id)}
-                              disabled={actionLoading === order.id}
-                              className="inline-flex items-center gap-1 px-3 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
-                              title="Reenviar pedido para o fornecedor"
-                            >
-                              {actionLoading === order.id ? (
-                                <RefreshCw className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <RefreshCw className="w-4 h-4" />
-                              )}
-                              Reenviar
-                            </button>
-                          )}
                           {order.status !== 'cancelled' && (
                             <button
                               onClick={() => handleCancelOrder(order.id)}
