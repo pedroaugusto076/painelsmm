@@ -1,0 +1,135 @@
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
+
+const generateToken = (userId) => {
+  return jwt.sign(
+    { userId },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+  );
+};
+
+export default async function handler(req, res) {
+  // CORS
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({
+      success: false,
+      message: 'Method not allowed'
+    });
+  }
+
+  try {
+    const { name, email, password } = req.body;
+
+    // Validação
+    if (!name || name.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nome deve ter pelo menos 2 caracteres'
+      });
+    }
+
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email inválido'
+      });
+    }
+
+    if (!password || password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'Senha deve ter pelo menos 8 caracteres'
+      });
+    }
+
+    // Verificar se email já existe
+    const { data: existingUsers, error: checkError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase().trim())
+      .limit(1);
+
+    if (checkError) {
+      console.error('Erro ao verificar email:', checkError);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao verificar email'
+      });
+    }
+
+    if (existingUsers && existingUsers.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Este email já está cadastrado. Tente fazer login.'
+      });
+    }
+
+    // Hash da senha
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
+    // Gerar ID único
+    const crypto = await import('crypto');
+    const userId = crypto.randomUUID();
+
+    // Inserir usuário
+    const { data: newUser, error: insertError } = await supabase
+      .from('users')
+      .insert({
+        id: userId,
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
+        password_hash: passwordHash
+      })
+      .select('id, name, email, created_at')
+      .single();
+
+    if (insertError) {
+      console.error('Erro ao inserir usuário:', insertError);
+      return res.status(500).json({
+        success: false,
+        message: 'Não foi possível completar o cadastro'
+      });
+    }
+
+    // Gerar token
+    const token = generateToken(newUser.id);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Cadastro realizado com sucesso!',
+      data: {
+        user: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          createdAt: newUser.created_at
+        },
+        token
+      }
+    });
+  } catch (error) {
+    console.error('Erro no registro:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Não foi possível completar o cadastro. Tente novamente mais tarde.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
