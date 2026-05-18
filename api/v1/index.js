@@ -37,13 +37,26 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const validApiKey = process.env.PUBLIC_API_KEY || 'demo-key-123';
-    
-    if (key !== validApiKey) {
+    // Verificar se a API key existe no banco de dados
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_ANON_KEY
+    );
+
+    const { data: users, error: userError } = await supabase
+      .from('users')
+      .select('id, email, name')
+      .eq('api_key', key)
+      .limit(1);
+
+    if (userError || !users || users.length === 0) {
       return res.status(401).json({
         error: 'Invalid API key'
       });
     }
+
+    const user = users[0];
+    console.log(`✅ [API] Requisição autorizada para: ${user.email}`);
 
     // Ação: listar serviços
     if (action === 'services') {

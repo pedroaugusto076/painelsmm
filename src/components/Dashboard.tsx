@@ -1197,9 +1197,30 @@ const PedidosTab = () => {
 
 // Aba de API
 const ApiTab = () => {
-  const [apiKey] = useState('sk_test_1234567890abcdef');
+  const [apiKey, setApiKey] = useState('Carregando...');
   const [copied, setCopied] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadApiKey();
+  }, []);
+
+  const loadApiKey = async () => {
+    try {
+      const response = await authApi.getProfile();
+      if (response.success && response.data?.user?.apiKey) {
+        setApiKey(response.data.user.apiKey);
+      } else {
+        setApiKey('Erro ao carregar API key');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar API key:', error);
+      setApiKey('Erro ao carregar API key');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const copyToClipboard = (text: string, id?: string) => {
     navigator.clipboard.writeText(text);
@@ -1241,20 +1262,28 @@ const ApiTab = () => {
         <p className="text-violet-100 mb-4 text-sm">
           Use esta chave para integrar nossos serviços em suas aplicações
         </p>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={apiKey}
-            readOnly
-            className="flex-1 px-4 py-3 bg-white/10 backdrop-blur border border-white/20 rounded-xl font-mono text-sm text-white"
-          />
-          <button
-            onClick={() => copyToClipboard(apiKey)}
-            className="px-6 py-3 bg-white text-violet-600 hover:bg-gray-100 font-bold rounded-xl transition"
-          >
-            {copied ? '✓ Copiado!' : 'Copiar'}
-          </button>
-        </div>
+        {loading ? (
+          <div className="flex items-center gap-2 text-white">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Carregando sua API key...</span>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={apiKey}
+              readOnly
+              className="flex-1 px-4 py-3 bg-white/10 backdrop-blur border border-white/20 rounded-xl font-mono text-sm text-white"
+            />
+            <button
+              onClick={() => copyToClipboard(apiKey)}
+              disabled={apiKey === 'Carregando...' || apiKey === 'Erro ao carregar API key'}
+              className="px-6 py-3 bg-white text-violet-600 hover:bg-gray-100 font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {copied ? '✓ Copiado!' : 'Copiar'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Base URL */}

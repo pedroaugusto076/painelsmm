@@ -80,6 +80,9 @@ module.exports = async function handler(req, res) {
     // Gerar ID único
     const userId = crypto.randomUUID();
 
+    // Gerar API Key única
+    const apiKey = 'sk_' + crypto.randomBytes(32).toString('hex');
+
     // Inserir usuário
     const { data: newUser, error: insertError } = await supabase
       .from('users')
@@ -87,9 +90,10 @@ module.exports = async function handler(req, res) {
         id: userId,
         name: name.trim(),
         email: email.toLowerCase().trim(),
-        password_hash: passwordHash
+        password_hash: passwordHash,
+        api_key: apiKey
       })
-      .select('id, name, email, created_at')
+      .select('id, name, email, api_key, created_at')
       .single();
 
     if (insertError) {

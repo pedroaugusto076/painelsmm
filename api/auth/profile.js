@@ -50,7 +50,7 @@ module.exports = async function handler(req, res) {
     // Buscar usuário
     const { data: users, error } = await supabase
       .from('users')
-      .select('id, name, email, email_verified, created_at, last_login, role, is_admin')
+      .select('id, name, email, email_verified, created_at, last_login, role, is_admin, api_key')
       .eq('id', decoded.userId)
       .limit(1);
 
@@ -82,7 +82,8 @@ module.exports = async function handler(req, res) {
           createdAt: user.created_at,
           lastLogin: user.last_login,
           role: user.role,
-          isAdmin: user.is_admin
+          isAdmin: user.is_admin,
+          apiKey: user.api_key
         }
       }
     });
