@@ -78,6 +78,419 @@ const LogoutModal: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: (
   );
 };
 
+// Card de Saldo
+const BalanceCard = () => {
+  const [balance, setBalance] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+  const [showAddBalanceModal, setShowAddBalanceModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+
+  useEffect(() => {
+    loadBalance();
+  }, []);
+
+  const loadBalance = async () => {
+    try {
+      const response = await authApi.getProfile();
+      if (response.success && response.data?.user) {
+        setBalance(response.data.user.balance || 0);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar saldo:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBalanceAdded = () => {
+    loadBalance(); // Recarregar saldo
+    setShowAddBalanceModal(false);
+  };
+
+  return (
+    <>
+      <div className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl p-6 mb-6 text-white shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-violet-100 text-sm mb-1">Seu Saldo</p>
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="text-2xl font-bold">Carregando...</span>
+              </div>
+            ) : (
+              <p className="text-4xl font-bold">R$ {balance.toFixed(2)}</p>
+            )}
+          </div>
+          <DollarSign className="w-16 h-16 text-white/20" />
+        </div>
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={() => setShowAddBalanceModal(true)}
+            className="flex-1 bg-white text-violet-600 hover:bg-gray-100 font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2"
+          >
+            <DollarSign className="w-5 h-5" />
+            Adicionar Saldo
+          </button>
+          <button
+            onClick={() => setShowHistoryModal(true)}
+            className="bg-white/10 hover:bg-white/20 backdrop-blur text-white font-semibold py-3 px-4 rounded-xl transition"
+          >
+            Histórico
+          </button>
+        </div>
+      </div>
+
+      {/* Modal Adicionar Saldo */}
+      {showAddBalanceModal && (
+        <AddBalanceModal
+          onClose={() => setShowAddBalanceModal(false)}
+          onSuccess={handleBalanceAdded}
+        />
+      )}
+
+      {/* Modal Histórico */}
+      {showHistoryModal && (
+        <BalanceHistoryModal onClose={() => setShowHistoryModal(false)} />
+      )}
+    </>
+  );
+};
+
+// Modal de Adicionar Saldo
+const AddBalanceModal: React.FC<{ onClose: () => void; onSuccess: () => void }> = ({ onClose, onSuccess }) => {
+  const [amount, setAmount] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [qrCode, setQrCode] = useState('');
+  const [qrCodeBase64, setQrCodeBase64] = useState('');
+  const [paymentId, setPaymentId] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const suggestedAmounts = [50, 100, 200, 500];
+
+  const handleAddBalance = async () => {
+    const numAmount = parseFloat(amount);
+    
+    if (!numAmount || numAmount < 10) {
+      alert('Valor mínimo é R$ 10,00');
+      return;
+    }
+
+    if (numAmount > 10000) {
+      alert('Valor máximo é R$ 10.000,00');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await paymentApi.addBalance(numAmount);
+
+      if (response.success && response.data) {
+        setQrCode(response.data.qrCode);
+        setQrCodeBase64(response.data.qrCodeBase64);
+        setPaymentId(response.data.paymentId);
+        
+        // Iniciar polling para verificar pagamento
+        startPolling(response.data.paymentId);
+      }
+    } catch (error: any) {
+      alert(`Erro: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startPolling = (paymentId: string) => {
+    const interval = setInterval(async () => {
+      try {
+        const response = await authApi.getProfile();
+        if (response.success) {
+          // Se o saldo mudou, pagamento foi confirmado
+          setShowSuccess(true);
+          clearInterval(interval);
+          setTimeout(() => {
+            onSuccess();
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Erro no polling:', error);
+      }
+    }, 5000); // Verificar a cada 5 segundos
+
+    // Parar após 10 minutos
+    setTimeout(() => clearInterval(interval), 600000);
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(qrCode);
+    alert('Código PIX copiado!');
+  };
+
+  if (showSuccess) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div onClick={onClose} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+        <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-12 h-12 text-green-600" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">Pagamento Confirmado!</h3>
+          <p className="text-gray-600">Seu saldo foi adicionado com sucesso.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (qrCode) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div onClick={onClose} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+        <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900">Pagar com PIX</h3>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="text-center">
+            <p className="text-gray-600 mb-4">Escaneie o QR Code ou copie o código PIX</p>
+            
+            {qrCodeBase64 && (
+              <div className="bg-white p-4 rounded-xl inline-block mb-4">
+                <img src={`data:image/png;base64,${qrCodeBase64}`} alt="QR Code" className="w-64 h-64" />
+              </div>
+            )}
+
+            <div className="bg-gray-50 p-4 rounded-xl mb-4">
+              <p className="text-sm text-gray-600 mb-2">Código PIX:</p>
+              <p className="text-xs font-mono break-all text-gray-800">{qrCode}</p>
+            </div>
+
+            <button
+              onClick={copyToClipboard}
+              className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-3 rounded-xl transition"
+            >
+              Copiar Código PIX
+            </button>
+
+            <p className="text-sm text-gray-500 mt-4">
+              Aguardando pagamento... <Loader2 className="w-4 h-4 inline animate-spin" />
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div onClick={onClose} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold text-gray-900">Adicionar Saldo</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Quanto deseja adicionar?
+          </label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0,00"
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              min="10"
+              max="10000"
+              step="0.01"
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Mínimo: R$ 10,00 | Máximo: R$ 10.000,00</p>
+        </div>
+
+        <div className="mb-6">
+          <p className="text-sm font-medium text-gray-700 mb-2">Valores sugeridos:</p>
+          <div className="grid grid-cols-4 gap-2">
+            {suggestedAmounts.map((value) => (
+              <button
+                key={value}
+                onClick={() => setAmount(value.toString())}
+                className="py-2 px-3 bg-gray-100 hover:bg-violet-100 hover:text-violet-600 rounded-lg font-semibold text-sm transition"
+              >
+                R$ {value}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={handleAddBalance}
+          disabled={loading || !amount}
+          className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Gerando PIX...
+            </>
+          ) : (
+            <>
+              <DollarSign className="w-5 h-5" />
+              Gerar PIX
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Modal de Histórico
+const BalanceHistoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadHistory();
+  }, []);
+
+  const loadHistory = async () => {
+    try {
+      const response = await paymentApi.getBalanceHistory();
+      if (response.success && response.data) {
+        setTransactions(response.data.transactions);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar histórico:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div onClick={onClose} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h3 className="text-xl font-bold text-gray-900">Histórico de Transações</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-12">
+              <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600">Nenhuma transação encontrada</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {transactions.map((tx) => (
+                <div key={tx.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {tx.type === 'deposit' ? (
+                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                          <TrendingUp className="w-4 h-4 text-green-600" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                          <ShoppingCart className="w-4 h-4 text-red-600" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {tx.type === 'deposit' ? 'Depósito' : 'Compra'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(tx.created_at).toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-bold ${tx.type === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>
+                        {tx.type === 'deposit' ? '+' : '-'} R$ {Math.abs(tx.amount).toFixed(2)}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Saldo: R$ {tx.balance_after.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                  {tx.description && (
+                    <p className="text-sm text-gray-600 mt-2">{tx.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Modal de Confirmação de Logout (mantido como estava)
+const LogoutModal: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: () => void }> = ({ isOpen, onClose, onConfirm }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      {/* Overlay */}
+      <div 
+        onClick={onClose}
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+      />
+      
+      {/* Modal */}
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+        <div className="flex flex-col items-center text-center">
+          {/* Ícone */}
+          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
+            <LogOut className="h-8 w-8 text-red-600" />
+          </div>
+          
+          {/* Título */}
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
+            Confirmar Saída
+          </h3>
+          
+          {/* Mensagem */}
+          <p className="text-gray-600 mb-6">
+            Tem certeza que deseja sair da sua conta?
+          </p>
+          
+          {/* Botões */}
+          <div className="flex gap-3 w-full">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={onConfirm}
+              className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition"
+            >
+              Sair
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Dashboard Component com Sidebar
 export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const [user, setUser] = useState<any>(null);
@@ -221,6 +634,9 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
 
         {/* Content Area - Rolável */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+          {/* Card de Saldo - Aparece em todas as tabs */}
+          <BalanceCard />
+          
           {currentTab === 'servicos' && <ServicosTab />}
           {currentTab === 'pedidos' && <PedidosTab />}
           {currentTab === 'api' && <ApiTab />}
