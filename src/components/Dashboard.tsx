@@ -78,7 +78,95 @@ const LogoutModal: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: (
   );
 };
 
-// Card de Saldo
+// Card de Saldo Compacto (para o header)
+const BalanceCardCompact = () => {
+  const [balance, setBalance] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+  const [showAddBalanceModal, setShowAddBalanceModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+
+  useEffect(() => {
+    loadBalance();
+  }, []);
+
+  const loadBalance = async () => {
+    try {
+      const response = await authApi.getProfile();
+      if (response.success && response.data?.user) {
+        setBalance(response.data.user.balance || 0);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar saldo:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBalanceAdded = () => {
+    loadBalance();
+    setShowAddBalanceModal(false);
+  };
+
+  // Escutar evento de compra para atualizar saldo
+  useEffect(() => {
+    const handlePurchase = () => {
+      loadBalance();
+    };
+    
+    window.addEventListener('balanceUpdated', handlePurchase);
+    return () => window.removeEventListener('balanceUpdated', handlePurchase);
+  }, []);
+
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        {/* Saldo */}
+        <div className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2 rounded-lg">
+          <DollarSign className="w-5 h-5" />
+          <div>
+            <p className="text-xs text-violet-100">Saldo</p>
+            {loading ? (
+              <p className="text-sm font-bold">...</p>
+            ) : (
+              <p className="text-sm font-bold">R$ {balance.toFixed(2)}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Botões */}
+        <button
+          onClick={() => setShowAddBalanceModal(true)}
+          className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg transition font-semibold text-sm"
+        >
+          <DollarSign className="w-4 h-4" />
+          <span className="hidden sm:inline">Adicionar</span>
+        </button>
+        
+        <button
+          onClick={() => setShowHistoryModal(true)}
+          className="p-2 hover:bg-gray-100 rounded-lg transition"
+          title="Histórico"
+        >
+          <Clock className="w-5 h-5 text-gray-600" />
+        </button>
+      </div>
+
+      {/* Modais */}
+      {showAddBalanceModal && (
+        <AddBalanceModal
+          onClose={() => setShowAddBalanceModal(false)}
+          onSuccess={handleBalanceAdded}
+        />
+      )}
+
+      {showHistoryModal && (
+        <BalanceHistoryModal onClose={() => setShowHistoryModal(false)} />
+      )}
+    </>
+  );
+};
+
+// Card de Saldo (versão antiga - pode remover)
 const BalanceCard = () => {
   const [balance, setBalance] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -440,56 +528,6 @@ const BalanceHistoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => 
   );
 };
 
-// Modal de Confirmação de Logout (mantido como estava)
-const LogoutModal: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: () => void }> = ({ isOpen, onClose, onConfirm }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Overlay */}
-      <div 
-        onClick={onClose}
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-      />
-      
-      {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-        <div className="flex flex-col items-center text-center">
-          {/* Ícone */}
-          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
-            <LogOut className="h-8 w-8 text-red-600" />
-          </div>
-          
-          {/* Título */}
-          <h3 className="text-xl font-bold text-gray-900 mb-2">
-            Confirmar Saída
-          </h3>
-          
-          {/* Mensagem */}
-          <p className="text-gray-600 mb-6">
-            Tem certeza que deseja sair da sua conta?
-          </p>
-          
-          {/* Botões */}
-          <div className="flex gap-3 w-full">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={onConfirm}
-              className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition"
-            >
-              Sair
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // Dashboard Component com Sidebar
 export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
@@ -620,23 +658,24 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top Bar - Fixo */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 flex-shrink-0">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
-          >
-            <Menu className="h-6 w-6 text-gray-600" />
-          </button>
-          <h1 className="text-xl font-bold text-gray-900">
-            {menuItems.find(item => item.id === currentTab)?.name}
-          </h1>
-          <div className="w-10" /> {/* Spacer */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+            >
+              <Menu className="h-6 w-6 text-gray-600" />
+            </button>
+            <h1 className="text-xl font-bold text-gray-900">
+              {menuItems.find(item => item.id === currentTab)?.name}
+            </h1>
+          </div>
+          
+          {/* Saldo no Header */}
+          <BalanceCardCompact />
         </header>
 
         {/* Content Area - Rolável */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
-          {/* Card de Saldo - Aparece em todas as tabs */}
-          <BalanceCard />
-          
           {currentTab === 'servicos' && <ServicosTab />}
           {currentTab === 'pedidos' && <PedidosTab />}
           {currentTab === 'api' && <ApiTab />}
@@ -794,7 +833,7 @@ const ServicosTab = () => {
     e.preventDefault();
     setLoading(true);
     
-    console.log('🚀 [DEBUG] Iniciando criação de pagamento...');
+    console.log('🚀 [DEBUG] Iniciando compra com saldo...');
     console.log('📦 [DEBUG] Dados:', {
       serviceType: selectedService,
       packageId: selectedPackage,
@@ -805,8 +844,8 @@ const ServicosTab = () => {
     });
     
     try {
-      // Criar pagamento PIX
-      const response = await paymentApi.createPayment({
+      // Comprar com saldo
+      const response = await paymentApi.purchaseWithBalance({
         serviceType: selectedService,
         packageId: selectedPackage,
         quantity: currentPackage!.qty,
@@ -818,22 +857,46 @@ const ServicosTab = () => {
       console.log('✅ [DEBUG] Resposta do servidor:', response);
 
       if (response.success && response.data) {
-        console.log('💳 [DEBUG] PIX gerado com sucesso!');
+        console.log('💰 [DEBUG] Compra realizada com sucesso!');
         console.log('📝 [DEBUG] Order ID:', response.data.orderId);
-        console.log('💰 [DEBUG] Payment ID:', response.data.paymentId);
+        console.log('💵 [DEBUG] Novo saldo:', response.data.newBalance);
         
-        // Mostrar modal com QR Code PIX
-        setPixData(response.data);
-        setCurrentOrderId(response.data.orderId);
-        setShowPixModal(true);
+        // Disparar evento para atualizar saldo no header
+        window.dispatchEvent(new Event('balanceUpdated'));
+        
+        // Mostrar modal de sucesso
+        setShowSuccessModal(true);
+        
+        // Limpar formulário
+        setSelectedService('followers');
+        setSelectedPackage('');
+        setInstagramUsername('');
+        setPostUrl('');
+        
+        // Fechar modal após 3 segundos
+        setTimeout(() => {
+          setShowSuccessModal(false);
+        }, 3000);
       } else {
         console.error('❌ [DEBUG] Resposta sem sucesso:', response);
-        alert('Erro ao gerar PIX: ' + (response.message || 'Resposta inválida'));
+        alert('Erro: ' + (response.message || 'Resposta inválida'));
       }
     } catch (error: any) {
-      console.error('❌ [DEBUG] Erro ao criar pagamento:', error);
-      console.error('📋 [DEBUG] Stack:', error.stack);
-      alert(error.message || 'Erro ao gerar PIX. Tente novamente.');
+      console.error('❌ [DEBUG] Erro ao comprar:', error);
+      
+      // Verificar se é erro de saldo insuficiente
+      if (error.response?.insufficientBalance) {
+        const currentBalance = error.response.currentBalance || 0;
+        const requiredAmount = error.response.requiredAmount || 0;
+        const missing = requiredAmount - currentBalance;
+        
+        if (confirm(`Saldo insuficiente!\n\nVocê tem: R$ ${currentBalance.toFixed(2)}\nPrecisa de: R$ ${requiredAmount.toFixed(2)}\nFaltam: R$ ${missing.toFixed(2)}\n\nDeseja adicionar saldo agora?`)) {
+          // Abrir modal de adicionar saldo (você pode implementar isso)
+          alert('Clique no botão "Adicionar Saldo" no topo da página');
+        }
+      } else {
+        alert(error.message || 'Erro ao processar compra. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
