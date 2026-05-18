@@ -219,6 +219,46 @@ export const paymentApi = {
       method: 'GET',
     });
   },
+
+  // Adicionar saldo
+  addBalance: async (amount: number): Promise<ApiResponse<{
+    paymentId: string;
+    qrCode: string;
+    qrCodeBase64: string;
+    amount: number;
+    transactionId: string;
+  }>> => {
+    return apiRequest('/payments/add-balance', {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    });
+  },
+
+  // Comprar com saldo
+  purchaseWithBalance: async (orderData: {
+    serviceType: string;
+    packageId: string;
+    quantity: number;
+    price: number;
+    instagramUsername: string;
+    postUrl?: string;
+  }): Promise<ApiResponse<{
+    orderId: string;
+    newBalance: number;
+    amountCharged: number;
+  }>> => {
+    return apiRequest('/payments/purchase-with-balance', {
+      method: 'POST',
+      body: JSON.stringify(orderData),
+    });
+  },
+
+  // Buscar histórico de saldo
+  getBalanceHistory: async (): Promise<ApiResponse<{ transactions: any[] }>> => {
+    return apiRequest('/payments/balance-history', {
+      method: 'GET',
+    });
+  },
 };
 
 // Admin API

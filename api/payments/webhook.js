@@ -40,20 +40,80 @@ module.exports = async function handler(req, res) {
           process.env.SUPABASE_ANON_KEY
         );
 
-        // Atualizar pedido no banco
-        const { error } = await supabase
-          .from('orders')
-          .update({
-            status: 'completed',
-            payment_status: 'paid',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', orderId);
+        // Verificar se é uma recarga de saldo (não tem external_reference ou começa com 'balance_')
+        if (!orderId || orderId.startsWith('balance_')) {
+          console.log('💰 [WEBHOOK] Detectado: Recarga de saldo');
+          
+          // Buscar transação pendente pelo payment_id
+          const { data: transactions, error: txError } = await supabase
+            .from('balance_transactions')
+            .select('*')
+            .eq('payment_id', paymentId)
+            .eq('status', 'pending')
+            .limit(1);
 
-        if (error) {
-          console.error('❌ [WEBHOOK] Erro ao atualizar pedido:', error);
+          if (txError || !transactions || transactions.length === 0) {
+            console.log('⚠️ [WEBHOOK] Transação de saldo não encontrada ou já processada');
+            return res.status(200).json({ success: true });
+          }
+
+          const transaction = transactions[0];
+
+          // Buscar saldo atual do usuário
+          const { data: users, error: userError } = await supabase
+            .from('users')
+            .select('balance')
+            .eq('id', transaction.user_id)
+            .single();
+
+          if (userError || !users) {
+            console.error('❌ [WEBHOOK] Usuário não encontrado');
+            return res.status(200).json({ success: true });
+          }
+
+          const currentBalance = users.balance || 0;
+          const newBalance = currentBalance + transaction.amount;
+
+          // Atualizar saldo do usuário
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ balance: newBalance })
+            .eq('id', transaction.user_id);
+
+          if (updateError) {
+            console.error('❌ [WEBHOOK] Erro ao atualizar saldo:', updateError);
+            return res.status(200).json({ success: false });
+          }
+
+          // Atualizar transação
+          await supabase
+            .from('balance_transactions')
+            .update({
+              status: 'completed',
+              balance_after: newBalance
+            })
+            .eq('id', transaction.id);
+
+          console.log(`✅ [WEBHOOK] Saldo adicionado! User: ${transaction.user_id}, Valor: R$ ${transaction.amount}, Novo saldo: R$ ${newBalance}`);
         } else {
-          console.log('✅ [WEBHOOK] Pedido atualizado com sucesso!');
+          // É um pedido normal
+          console.log('📦 [WEBHOOK] Detectado: Pedido de serviço');
+          
+          // Atualizar pedido no banco
+          const { error } = await supabase
+            .from('orders')
+            .update({
+              status: 'completed',
+              payment_status: 'paid',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', orderId);
+
+          if (error) {
+            console.error('❌ [WEBHOOK] Erro ao atualizar pedido:', error);
+          } else {
+            console.log('✅ [WEBHOOK] Pedido atualizado com sucesso!');
+          }
         }
       }
     }
