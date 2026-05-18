@@ -29,6 +29,7 @@ import {
 import { authApi } from './services/api';
 import { Dashboard } from './components/Dashboard';
 import AdminPanel from './components/AdminPanel';
+import ApiDocs from './components/ApiDocs';
 
 const BackgroundEffects = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10 bg-[#fbfbfe]">
@@ -770,6 +771,7 @@ const Footer: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }
             <h4 className="text-white font-bold mb-3 sm:mb-4 text-sm sm:text-base">Links Úteis</h4>
             <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
               <li><a href="#faq" className="hover:text-violet-400">FAQ</a></li>
+              <li><button onClick={() => onNavigate('api-docs')} className="hover:text-violet-400 text-left">Documentação da API</button></li>
               <li><button onClick={() => onNavigate('termos')} className="hover:text-violet-400 text-left">Termos de Responsabilidade</button></li>
               <li><button onClick={() => onNavigate('privacidade')} className="hover:text-violet-400 text-left">Política de Privacidade</button></li>
             </ul>
@@ -1980,6 +1982,10 @@ export default function App() {
 
   if (currentPage === 'dashboard' && isAuthenticated) {
     return <Dashboard onNavigate={handleNavigate} />;
+  }
+
+  if (currentPage === 'api-docs') {
+    return <ApiDocs />;
   }
 
   if (currentPage === 'login') {

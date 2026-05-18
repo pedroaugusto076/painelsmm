@@ -1199,44 +1199,340 @@ const PedidosTab = () => {
 const ApiTab = () => {
   const [apiKey] = useState('sk_test_1234567890abcdef');
   const [copied, setCopied] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(apiKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const copyToClipboard = (text: string, id?: string) => {
+    navigator.clipboard.writeText(text);
+    if (id) {
+      setCopiedCode(id);
+      setTimeout(() => setCopiedCode(null), 2000);
+    } else {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
+  const CodeBlock = ({ code, language, id }: { code: string; language: string; id: string }) => (
+    <div className="relative">
+      <div className="absolute top-2 right-2 flex items-center gap-2 z-10">
+        <span className="text-xs text-gray-400 uppercase bg-gray-800 px-2 py-1 rounded">{language}</span>
+        <button
+          onClick={() => copyToClipboard(code, id)}
+          className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition"
+        >
+          {copiedCode === id ? (
+            <CheckCircle2 className="w-4 h-4 text-green-400" />
+          ) : (
+            <Target className="w-4 h-4 text-gray-300" />
+          )}
+        </button>
+      </div>
+      <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl p-6 border border-gray-200">
-        <h3 className="font-bold text-gray-900 mb-4">Sua Chave de API</h3>
+    <div className="space-y-6 max-w-5xl">
+      {/* API Key */}
+      <div className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl p-6 text-white">
+        <h3 className="font-bold text-xl mb-2">🔑 Sua Chave de API</h3>
+        <p className="text-violet-100 mb-4 text-sm">
+          Use esta chave para integrar nossos serviços em suas aplicações
+        </p>
         <div className="flex gap-2">
           <input
             type="text"
             value={apiKey}
             readOnly
-            className="flex-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl font-mono text-sm"
+            className="flex-1 px-4 py-3 bg-white/10 backdrop-blur border border-white/20 rounded-xl font-mono text-sm text-white"
           />
           <button
-            onClick={copyToClipboard}
-            className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition"
+            onClick={() => copyToClipboard(apiKey)}
+            className="px-6 py-3 bg-white text-violet-600 hover:bg-gray-100 font-bold rounded-xl transition"
           >
-            {copied ? 'Copiado!' : 'Copiar'}
+            {copied ? '✓ Copiado!' : 'Copiar'}
           </button>
         </div>
-        <p className="text-sm text-gray-600 mt-2">
-          Use esta chave para integrar nossos serviços em suas aplicações
-        </p>
       </div>
 
+      {/* Base URL */}
       <div className="bg-white rounded-xl p-6 border border-gray-200">
-        <h3 className="font-bold text-gray-900 mb-4">Documentação da API</h3>
-        <p className="text-gray-600 mb-4">
-          Acesse nossa documentação completa para integrar os serviços SMM em sua aplicação.
+        <h3 className="font-bold text-gray-900 text-lg mb-3">📡 Base URL</h3>
+        <div className="bg-gray-100 p-4 rounded-lg font-mono text-sm">
+          https://painelsmm-two.vercel.app/api/v1
+        </div>
+      </div>
+
+      {/* Autenticação */}
+      <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <h3 className="font-bold text-gray-900 text-lg mb-3">🔐 Autenticação</h3>
+        <p className="text-gray-600 mb-4 text-sm">
+          Todas as requisições requerem sua API Key no corpo da requisição:
         </p>
-        <button className="px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl transition">
-          Ver Documentação
-        </button>
+        <CodeBlock
+          id="auth"
+          language="json"
+          code={`{
+  "key": "${apiKey}"
+}`}
+        />
+      </div>
+
+      {/* Endpoints */}
+      <div className="space-y-4">
+        {/* Listar Serviços */}
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="px-3 py-1 bg-green-100 text-green-800 rounded-lg font-semibold text-sm">
+              POST
+            </span>
+            <h3 className="text-lg font-bold text-gray-900">Listar Serviços</h3>
+          </div>
+          <p className="text-gray-600 mb-4 text-sm">
+            Lista todos os serviços disponíveis com preços e limites.
+          </p>
+
+          <h4 className="font-semibold text-gray-900 mb-2 text-sm">Request:</h4>
+          <CodeBlock
+            id="services-req"
+            language="json"
+            code={`{
+  "key": "${apiKey}",
+  "action": "services"
+}`}
+          />
+
+          <h4 className="font-semibold text-gray-900 mt-4 mb-2 text-sm">Response:</h4>
+          <CodeBlock
+            id="services-res"
+            language="json"
+            code={`[
+  {
+    "service": "1",
+    "name": "Instagram Seguidores Brasil",
+    "rate": "0.15",
+    "min": "100",
+    "max": "10000"
+  }
+]`}
+          />
+        </div>
+
+        {/* Criar Pedido */}
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg font-semibold text-sm">
+              POST
+            </span>
+            <h3 className="text-lg font-bold text-gray-900">Criar Pedido</h3>
+          </div>
+          <p className="text-gray-600 mb-4 text-sm">
+            Cria um novo pedido de serviço.
+          </p>
+
+          <h4 className="font-semibold text-gray-900 mb-2 text-sm">Request:</h4>
+          <CodeBlock
+            id="add-req"
+            language="json"
+            code={`{
+  "key": "${apiKey}",
+  "action": "add",
+  "service": "1",
+  "link": "https://instagram.com/usuario",
+  "quantity": 1000
+}`}
+          />
+
+          <h4 className="font-semibold text-gray-900 mt-4 mb-2 text-sm">Response:</h4>
+          <CodeBlock
+            id="add-res"
+            language="json"
+            code={`{
+  "order": "84a10992-85b7-4394-ac67-9ca8ed6d97d9"
+}`}
+          />
+        </div>
+
+        {/* Verificar Status */}
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-lg font-semibold text-sm">
+              POST
+            </span>
+            <h3 className="text-lg font-bold text-gray-900">Verificar Status</h3>
+          </div>
+          <p className="text-gray-600 mb-4 text-sm">
+            Verifica o status de um pedido existente.
+          </p>
+
+          <h4 className="font-semibold text-gray-900 mb-2 text-sm">Request:</h4>
+          <CodeBlock
+            id="status-req"
+            language="json"
+            code={`{
+  "key": "${apiKey}",
+  "action": "status",
+  "order": "84a10992-85b7-4394-ac67-9ca8ed6d97d9"
+}`}
+          />
+
+          <h4 className="font-semibold text-gray-900 mt-4 mb-2 text-sm">Response:</h4>
+          <CodeBlock
+            id="status-res"
+            language="json"
+            code={`{
+  "charge": "150.00",
+  "status": "In progress",
+  "remains": "500",
+  "currency": "BRL"
+}`}
+          />
+        </div>
+      </div>
+
+      {/* Exemplos de Código */}
+      <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <h3 className="font-bold text-gray-900 text-lg mb-4">💻 Exemplos de Código</h3>
+
+        {/* cURL */}
+        <div className="mb-6">
+          <h4 className="text-md font-semibold text-gray-900 mb-3">cURL</h4>
+          <CodeBlock
+            id="curl-example"
+            language="bash"
+            code={`curl -X POST https://painelsmm-two.vercel.app/api/v1 \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "key": "${apiKey}",
+    "action": "services"
+  }'`}
+          />
+        </div>
+
+        {/* JavaScript */}
+        <div className="mb-6">
+          <h4 className="text-md font-semibold text-gray-900 mb-3">JavaScript</h4>
+          <CodeBlock
+            id="js-example"
+            language="javascript"
+            code={`const API_URL = 'https://painelsmm-two.vercel.app/api/v1';
+const API_KEY = '${apiKey}';
+
+async function listServices() {
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      key: API_KEY,
+      action: 'services'
+    })
+  });
+  return await response.json();
+}
+
+const services = await listServices();
+console.log(services);`}
+          />
+        </div>
+
+        {/* PHP */}
+        <div className="mb-6">
+          <h4 className="text-md font-semibold text-gray-900 mb-3">PHP</h4>
+          <CodeBlock
+            id="php-example"
+            language="php"
+            code={`<?php
+$API_URL = 'https://painelsmm-two.vercel.app/api/v1';
+$API_KEY = '${apiKey}';
+
+$data = [
+    'key' => $API_KEY,
+    'action' => 'services'
+];
+
+$ch = curl_init($API_URL);
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$services = json_decode($response, true);
+print_r($services);
+?>`}
+          />
+        </div>
+
+        {/* Python */}
+        <div>
+          <h4 className="text-md font-semibold text-gray-900 mb-3">Python</h4>
+          <CodeBlock
+            id="python-example"
+            language="python"
+            code={`import requests
+
+API_URL = 'https://painelsmm-two.vercel.app/api/v1'
+API_KEY = '${apiKey}'
+
+response = requests.post(
+    API_URL,
+    json={
+        'key': API_KEY,
+        'action': 'services'
+    }
+)
+
+services = response.json()
+print(services)`}
+          />
+        </div>
+      </div>
+
+      {/* Códigos de Erro */}
+      <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <h3 className="font-bold text-gray-900 text-lg mb-4">⚠️ Códigos de Erro</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left font-semibold">Código</th>
+                <th className="px-4 py-2 text-left font-semibold">Mensagem</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              <tr>
+                <td className="px-4 py-2 font-mono">401</td>
+                <td className="px-4 py-2">API key inválida</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2 font-mono">400</td>
+                <td className="px-4 py-2">Parâmetros inválidos</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2 font-mono">404</td>
+                <td className="px-4 py-2">Pedido não encontrado</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2 font-mono">500</td>
+                <td className="px-4 py-2">Erro interno do servidor</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Limites */}
+      <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <h3 className="font-bold text-gray-900 text-lg mb-4">📊 Limites</h3>
+        <ul className="space-y-2 text-gray-600 text-sm">
+          <li>• <strong>Requisições:</strong> 100 por minuto</li>
+          <li>• <strong>Pedidos simultâneos:</strong> 10</li>
+          <li>• <strong>Timeout:</strong> 30 segundos</li>
+        </ul>
       </div>
     </div>
   );
