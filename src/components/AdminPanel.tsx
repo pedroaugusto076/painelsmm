@@ -20,7 +20,9 @@ import { adminApi } from '../services/api';
 
 // Função para formatar data no horário de Brasília
 const formatDateBR = (dateString: string) => {
-  const date = new Date(dateString);
+  // Criar data assumindo que vem em UTC
+  const date = new Date(dateString + (dateString.includes('Z') ? '' : 'Z'));
+  
   return date.toLocaleString('pt-BR', { 
     timeZone: 'America/Sao_Paulo',
     day: '2-digit',
