@@ -22,6 +22,23 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    // Verificar variáveis de ambiente críticas
+    if (!process.env.JWT_SECRET) {
+      console.error('❌ JWT_SECRET não configurado');
+      return res.status(500).json({
+        success: false,
+        message: 'Configuração do servidor incompleta (JWT_SECRET)'
+      });
+    }
+
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+      console.error('❌ Supabase não configurado');
+      return res.status(500).json({
+        success: false,
+        message: 'Configuração do servidor incompleta (Supabase)'
+      });
+    }
+
     const supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_ANON_KEY
@@ -233,10 +250,15 @@ module.exports = async function handler(req, res) {
 
   } catch (error) {
     console.error('❌ [AUTH] Erro:', error);
+    
+    // Garantir que sempre retornamos JSON
+    res.setHeader('Content-Type', 'application/json');
+    
     return res.status(500).json({
       success: false,
       message: 'Erro ao processar requisição',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Erro interno do servidor',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
