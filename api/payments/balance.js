@@ -74,17 +74,10 @@ module.exports = async function handler(req, res) {
     if (action === 'add' && req.method === 'POST') {
       const { amount } = req.body;
 
-      if (!amount || amount < 10) {
+      if (!amount || amount <= 0) {
         return res.status(400).json({
           success: false,
-          message: 'Valor mínimo para adicionar saldo é R$ 10,00'
-        });
-      }
-
-      if (amount > 10000) {
-        return res.status(400).json({
-          success: false,
-          message: 'Valor máximo para adicionar saldo é R$ 10.000,00'
+          message: 'Digite um valor válido'
         });
       }
 

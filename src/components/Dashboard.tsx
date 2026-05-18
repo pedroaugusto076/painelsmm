@@ -261,13 +261,8 @@ const AddBalanceModal: React.FC<{ onClose: () => void; onSuccess: () => void; cu
   const handleAddBalance = async () => {
     const numAmount = parseFloat(amount);
     
-    if (!numAmount || numAmount < 10) {
-      alert('Valor mínimo é R$ 10,00');
-      return;
-    }
-
-    if (numAmount > 10000) {
-      alert('Valor máximo é R$ 10.000,00');
+    if (!numAmount || numAmount <= 0) {
+      alert('Digite um valor válido');
       return;
     }
 
