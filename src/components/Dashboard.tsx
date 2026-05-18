@@ -156,6 +156,7 @@ const BalanceCardCompact = () => {
         <AddBalanceModal
           onClose={() => setShowAddBalanceModal(false)}
           onSuccess={handleBalanceAdded}
+          currentBalance={balance}
         />
       )}
 
@@ -234,6 +235,7 @@ const BalanceCard = () => {
         <AddBalanceModal
           onClose={() => setShowAddBalanceModal(false)}
           onSuccess={handleBalanceAdded}
+          currentBalance={balance}
         />
       )}
 
@@ -246,7 +248,7 @@ const BalanceCard = () => {
 };
 
 // Modal de Adicionar Saldo
-const AddBalanceModal: React.FC<{ onClose: () => void; onSuccess: () => void }> = ({ onClose, onSuccess }) => {
+const AddBalanceModal: React.FC<{ onClose: () => void; onSuccess: () => void; currentBalance: number }> = ({ onClose, onSuccess, currentBalance }) => {
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [qrCode, setQrCode] = useState('');
@@ -289,16 +291,22 @@ const AddBalanceModal: React.FC<{ onClose: () => void; onSuccess: () => void }> 
   };
 
   const startPolling = (paymentId: string) => {
+    const previousBalance = currentBalance;
+    
     const interval = setInterval(async () => {
       try {
         const response = await authApi.getProfile();
-        if (response.success) {
+        if (response.success && response.data?.user) {
+          const newBalance = response.data.user.balance || 0;
+          
           // Se o saldo mudou, pagamento foi confirmado
-          setShowSuccess(true);
-          clearInterval(interval);
-          setTimeout(() => {
-            onSuccess();
-          }, 2000);
+          if (newBalance > previousBalance) {
+            setShowSuccess(true);
+            clearInterval(interval);
+            setTimeout(() => {
+              onSuccess();
+            }, 2000);
+          }
         }
       } catch (error) {
         console.error('Erro no polling:', error);
