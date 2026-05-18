@@ -94,7 +94,7 @@ async function apiRequest<T>(
 export const authApi = {
   // Register new user
   register: async (userData: RegisterData): Promise<ApiResponse<AuthResponse>> => {
-    const response = await apiRequest<AuthResponse>('/auth/register', {
+    const response = await apiRequest<AuthResponse>('/auth?action=register', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
@@ -110,7 +110,7 @@ export const authApi = {
 
   // Login user
   login: async (credentials: LoginData): Promise<ApiResponse<AuthResponse>> => {
-    const response = await apiRequest<AuthResponse>('/auth/login', {
+    const response = await apiRequest<AuthResponse>('/auth?action=login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
