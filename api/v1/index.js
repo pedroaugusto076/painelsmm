@@ -66,7 +66,7 @@ module.exports = async function handler(req, res) {
           name: 'Instagram Seguidores Brasil',
           type: 'Default',
           category: 'Instagram',
-          rate: '0.15',
+          rate: '0.0001',
           min: '100',
           max: '10000',
           description: 'Seguidores brasileiros reais e ativos'
@@ -76,7 +76,7 @@ module.exports = async function handler(req, res) {
           name: 'Instagram Curtidas Brasil',
           type: 'Default',
           category: 'Instagram',
-          rate: '0.12',
+          rate: '0.0001',
           min: '100',
           max: '10000',
           description: 'Curtidas de perfis brasileiros'
@@ -86,7 +86,7 @@ module.exports = async function handler(req, res) {
           name: 'Instagram Comentários Brasil',
           type: 'Custom Comments',
           category: 'Instagram',
-          rate: '0.20',
+          rate: '0.0017',
           min: '10',
           max: '500',
           description: 'Comentários personalizados em português'
@@ -96,7 +96,7 @@ module.exports = async function handler(req, res) {
           name: 'Instagram Visualizações',
           type: 'Default',
           category: 'Instagram',
-          rate: '0.10',
+          rate: '0.00001',
           min: '1000',
           max: '100000',
           description: 'Visualizações para vídeos e reels'
@@ -153,11 +153,12 @@ module.exports = async function handler(req, res) {
       );
 
       // Calcular preço baseado no serviço e quantidade
+      // Preços por unidade (mesmos do painel)
       const rates = {
-        'followers': 0.0015,
-        'likes': 0.0012,
-        'comments': 0.0020,
-        'views': 0.0010
+        'followers': 0.0001,  // R$ 0,01 para 100 = R$ 0,0001 por unidade
+        'likes': 0.0001,      // R$ 0,01 para 100 = R$ 0,0001 por unidade  
+        'comments': 0.0017,   // R$ 1,70 por comentário
+        'views': 0.00001      // R$ 0,01 para 1000 = R$ 0,00001 por unidade
       };
       
       const price = quantity * rates[serviceType];
