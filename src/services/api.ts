@@ -228,7 +228,7 @@ export const paymentApi = {
     amount: number;
     transactionId: string;
   }>> => {
-    return apiRequest('/payments/add-balance', {
+    return apiRequest('/payments/balance?action=add', {
       method: 'POST',
       body: JSON.stringify({ amount }),
     });
@@ -247,7 +247,7 @@ export const paymentApi = {
     newBalance: number;
     amountCharged: number;
   }>> => {
-    return apiRequest('/payments/purchase-with-balance', {
+    return apiRequest('/payments/balance?action=purchase', {
       method: 'POST',
       body: JSON.stringify(orderData),
     });
@@ -255,7 +255,7 @@ export const paymentApi = {
 
   // Buscar histórico de saldo
   getBalanceHistory: async (): Promise<ApiResponse<{ transactions: any[] }>> => {
-    return apiRequest('/payments/balance-history', {
+    return apiRequest('/payments/balance?action=history', {
       method: 'GET',
     });
   },
