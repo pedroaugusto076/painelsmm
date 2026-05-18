@@ -152,9 +152,6 @@ module.exports = async function handler(req, res) {
         process.env.SUPABASE_ANON_KEY
       );
 
-      // Criar pedido no banco
-      const orderId = crypto.randomUUID();
-      
       // Calcular preço baseado no serviço e quantidade
       const rates = {
         'followers': 0.0015,
@@ -165,28 +162,95 @@ module.exports = async function handler(req, res) {
       
       const price = quantity * rates[serviceType];
 
+      // Buscar saldo do usuário
+      const { data: userData, error: userBalanceError } = await supabase
+        .from('users')
+        .select('balance')
+        .eq('id', user.id)
+        .single();
+
+      if (userBalanceError) {
+        console.error('Erro ao buscar saldo:', userBalanceError);
+        return res.status(500).json({ error: 'Failed to check balance' });
+      }
+
+      const currentBalance = userData.balance || 0;
+
+      // Verificar se tem saldo suficiente
+      if (currentBalance < price) {
+        return res.status(400).json({ 
+          error: 'Insufficient balance',
+          required: price.toFixed(2),
+          current: currentBalance.toFixed(2)
+        });
+      }
+
+      // Deduzir saldo
+      const newBalance = currentBalance - price;
+
+      const { error: balanceError } = await supabase
+        .from('users')
+        .update({ balance: newBalance })
+        .eq('id', user.id);
+
+      if (balanceError) {
+        console.error('Erro ao atualizar saldo:', balanceError);
+        return res.status(500).json({ error: 'Failed to update balance' });
+      }
+
+      // Criar pedido no banco (status pending para aprovação do admin)
+      const orderId = crypto.randomUUID();
+
       const { error: orderError } = await supabase
         .from('orders')
         .insert({
           id: orderId,
-          user_id: '00000000-0000-0000-0000-000000000000', // API user
+          user_id: user.id,
           service_type: serviceType,
           package_id: service,
           quantity: quantity,
           price: price,
           instagram_username: instagramUsername,
           post_url: serviceType !== 'followers' ? link : null,
-          status: 'processing',
+          status: 'pending',
           payment_status: 'paid',
+          payment_id: `api_${orderId}`,
           created_at: new Date().toISOString()
         });
 
       if (orderError) {
         console.error('Erro ao criar pedido:', orderError);
+        
+        // Reverter saldo em caso de erro
+        await supabase
+          .from('users')
+          .update({ balance: currentBalance })
+          .eq('id', user.id);
+        
         return res.status(500).json({ error: 'Failed to create order' });
       }
 
-      return res.status(200).json({ order: orderId });
+      // Registrar transação de saldo
+      await supabase
+        .from('balance_transactions')
+        .insert({
+          user_id: user.id,
+          type: 'purchase',
+          amount: -price,
+          balance_before: currentBalance,
+          balance_after: newBalance,
+          description: `Compra via API: ${quantity} ${serviceType} para @${instagramUsername}`,
+          order_id: orderId,
+          status: 'completed'
+        });
+
+      console.log(`✅ [API] Pedido criado via API: ${orderId} | User: ${user.email} | Valor: R$ ${price.toFixed(2)} | Novo saldo: R$ ${newBalance.toFixed(2)}`);
+
+      return res.status(200).json({ 
+        order: orderId,
+        charge: price.toFixed(2),
+        balance: newBalance.toFixed(2)
+      });
     }
 
     // Ação: verificar status
@@ -235,8 +299,26 @@ module.exports = async function handler(req, res) {
 
     // Ação: verificar saldo
     if (action === 'balance') {
+      const supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_ANON_KEY
+      );
+
+      const { data: userData, error: balanceError } = await supabase
+        .from('users')
+        .select('balance')
+        .eq('id', user.id)
+        .single();
+
+      if (balanceError) {
+        console.error('Erro ao buscar saldo:', balanceError);
+        return res.status(500).json({ error: 'Failed to get balance' });
+      }
+
+      const balance = userData.balance || 0;
+
       return res.status(200).json({
-        balance: '999999.99',
+        balance: balance.toFixed(2),
         currency: 'BRL'
       });
     }

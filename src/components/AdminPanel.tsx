@@ -419,7 +419,19 @@ ${JSON.stringify(smmmidiaData.smmmidiaResponse, null, 2)}`;
                           #{order.id.substring(0, 8)}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {order.payment_id ? `MP: ${order.payment_id}` : 'Sem pagamento'}
+                          {order.payment_id?.startsWith('api_') ? (
+                            <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">
+                              VIA API
+                            </span>
+                          ) : order.payment_id?.startsWith('balance_') ? (
+                            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-semibold">
+                              SALDO
+                            </span>
+                          ) : order.payment_id ? (
+                            `MP: ${order.payment_id}`
+                          ) : (
+                            'Sem pagamento'
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -561,8 +573,25 @@ ${JSON.stringify(smmmidiaData.smmmidiaResponse, null, 2)}`;
                 </div>
                 {selectedOrder.payment_id && (
                   <div>
-                    <p className="text-sm text-gray-600">ID Mercado Pago</p>
-                    <p className="font-medium text-gray-900">{selectedOrder.payment_id}</p>
+                    <p className="text-sm text-gray-600">Forma de Pagamento</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedOrder.payment_id.startsWith('api_') ? (
+                        <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-semibold">
+                          🔌 VIA API
+                        </span>
+                      ) : selectedOrder.payment_id.startsWith('balance_') ? (
+                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold">
+                          💰 SALDO
+                        </span>
+                      ) : (
+                        <>
+                          <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">
+                            💳 PIX
+                          </span>
+                          <span className="block text-xs text-gray-500 mt-1">ID: {selectedOrder.payment_id}</span>
+                        </>
+                      )}
+                    </p>
                   </div>
                 )}
                 {selectedOrder.smmmidia_order_id && (
