@@ -27,6 +27,20 @@ import {
 } from 'lucide-react';
 import { authApi, paymentApi, adminApi } from '../services/api';
 
+// Função para formatar data no horário de Brasília
+const formatDateBR = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleString('pt-BR', { 
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+};
+
 // Modal de Confirmação de Logout
 const LogoutModal: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: () => void }> = ({ isOpen, onClose, onConfirm }) => {
   if (!isOpen) return null;
@@ -505,7 +519,7 @@ const BalanceHistoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => 
                           {tx.type === 'deposit' ? 'Depósito' : 'Compra'}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {new Date(tx.created_at).toLocaleString('pt-BR')}
+                          {formatDateBR(tx.created_at)}
                         </p>
                       </div>
                     </div>
@@ -1534,7 +1548,7 @@ const AdminTab = () => {
                   <div className="text-right">
                     <p className="font-bold text-violet-600">R$ {parseFloat(pedido.price).toFixed(2)}</p>
                     <p className="text-xs text-gray-500">
-                      {new Date(pedido.created_at).toLocaleDateString('pt-BR')}
+                      {formatDateBR(pedido.created_at)}
                     </p>
                     <p className="text-xs text-gray-400">
                       {new Date(pedido.created_at).toLocaleTimeString('pt-BR')}
@@ -1568,7 +1582,7 @@ const AdminTab = () => {
                     <div className="col-span-2">
                       <span className="text-gray-500">Última atualização:</span>
                       <span className="ml-2 text-gray-700">
-                        {new Date(pedido.updated_at).toLocaleString('pt-BR')}
+                        {formatDateBR(pedido.updated_at)}
                       </span>
                     </div>
                   </div>
@@ -1661,7 +1675,7 @@ const PedidosTab = () => {
                     {pedido.quantity.toLocaleString()} unidades • @{pedido.instagram_username}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {new Date(pedido.created_at).toLocaleDateString('pt-BR')} às {new Date(pedido.created_at).toLocaleTimeString('pt-BR')}
+                    {formatDateBR(pedido.created_at)}
                   </p>
                 </div>
                 <div className="text-right">

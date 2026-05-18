@@ -18,6 +18,20 @@ import {
 } from 'lucide-react';
 import { adminApi } from '../services/api';
 
+// Função para formatar data no horário de Brasília
+const formatDateBR = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleString('pt-BR', { 
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+};
+
 interface Order {
   id: string;
   user_id: string;
@@ -426,7 +440,7 @@ ${JSON.stringify(smmmidiaData.smmmidiaResponse, null, 2)}`;
                         {getStatusBadge(order.status)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(order.created_at).toLocaleDateString('pt-BR')}
+                        {formatDateBR(order.created_at)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
@@ -534,13 +548,13 @@ ${JSON.stringify(smmmidiaData.smmmidiaResponse, null, 2)}`;
                 <div>
                   <p className="text-sm text-gray-600">Data de Criação</p>
                   <p className="font-medium text-gray-900">
-                    {new Date(selectedOrder.created_at).toLocaleString('pt-BR')}
+                    {formatDateBR(selectedOrder.created_at)}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Última Atualização</p>
                   <p className="font-medium text-gray-900">
-                    {new Date(selectedOrder.updated_at).toLocaleString('pt-BR')}
+                    {formatDateBR(selectedOrder.updated_at)}
                   </p>
                 </div>
                 {selectedOrder.payment_id && (
