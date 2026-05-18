@@ -199,7 +199,7 @@ module.exports = async function handler(req, res) {
         return res.status(500).json({ error: 'Failed to update balance' });
       }
 
-      // Criar pedido no banco (status pending para aprovação do admin)
+      // Criar pedido no banco (status completed = confirmado, aguardando aprovação do admin)
       const orderId = crypto.randomUUID();
 
       const { error: orderError } = await supabase
@@ -213,7 +213,7 @@ module.exports = async function handler(req, res) {
           price: price,
           instagram_username: instagramUsername,
           post_url: serviceType !== 'followers' ? link : null,
-          status: 'pending',
+          status: 'completed',  // Confirmado, aguardando aprovação do admin
           payment_status: 'paid',
           payment_id: `api_${orderId}`,
           created_at: new Date().toISOString()
