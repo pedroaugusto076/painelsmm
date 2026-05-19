@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
   try {
     // Verificar variáveis de ambiente críticas
     if (!process.env.JWT_SECRET) {
-      console.error('❌ JWT_SECRET não configurado');
+      
       return res.status(500).json({
         success: false,
         message: 'Configuração do servidor incompleta (JWT_SECRET)'
@@ -32,7 +32,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-      console.error('❌ Supabase não configurado');
+      
       return res.status(500).json({
         success: false,
         message: 'Configuração do servidor incompleta (Supabase)'
@@ -75,7 +75,7 @@ module.exports = async function handler(req, res) {
         .limit(1);
 
       if (selectError) {
-        console.error('Erro ao buscar usuário:', selectError);
+        
         return res.status(500).json({
           success: false,
           message: 'Erro ao fazer login'
@@ -176,7 +176,7 @@ module.exports = async function handler(req, res) {
         .limit(1);
 
       if (checkError) {
-        console.error('Erro ao verificar email:', checkError);
+        
         return res.status(500).json({
           success: false,
           message: 'Erro ao verificar email'
@@ -214,7 +214,7 @@ module.exports = async function handler(req, res) {
         .single();
 
       if (insertError) {
-        console.error('Erro ao inserir usuário:', insertError);
+        
         return res.status(500).json({
           success: false,
           message: 'Não foi possível completar o cadastro'
@@ -249,8 +249,7 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('❌ [AUTH] Erro:', error);
-    
+
     // Garantir que sempre retornamos JSON
     res.setHeader('Content-Type', 'application/json');
     

@@ -18,12 +18,6 @@ async function sendToSMMIDIA(serviceType, link, quantity) {
       throw new Error(`Serviço ${serviceType} não mapeado`);
     }
 
-    console.log('📤 Enviando para SMMMIDIA:', {
-      service: serviceId,
-      link,
-      quantity
-    });
-
     const response = await fetch(process.env.SMMMIDIA_API_URL || 'https://smmmidia.com/api/v2', {
       method: 'POST',
       headers: {
@@ -39,8 +33,6 @@ async function sendToSMMIDIA(serviceType, link, quantity) {
     });
 
     const data = await response.json();
-    
-    console.log('✅ Resposta SMMMIDIA:', data);
 
     // Se a API retornar um erro
     if (data.error) {
@@ -66,7 +58,7 @@ async function sendToSMMIDIA(serviceType, link, quantity) {
       data: data
     };
   } catch (error) {
-    console.error('❌ Erro SMMMIDIA:', error);
+    
     return {
       success: false,
       error: error.message,
@@ -164,13 +156,6 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    console.log('📤 [ADMIN] Enviando pedido para SMMMIDIA:', {
-      orderId: order.id,
-      serviceType: order.service_type,
-      link,
-      quantity: order.quantity
-    });
-
     // Enviar para SMMMIDIA
     const smmmidiaResult = await sendToSMMIDIA(
       order.service_type,
@@ -179,9 +164,7 @@ module.exports = async function handler(req, res) {
     );
 
     if (!smmmidiaResult.success) {
-      console.error('❌ [ADMIN] Erro ao enviar para SMMMIDIA:', smmmidiaResult.error);
-      console.error('📋 [ADMIN] Resposta da API:', smmmidiaResult.apiResponse);
-      
+
       // Salvar erro no banco
       await supabase
         .from('orders')
@@ -207,8 +190,6 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    console.log('✅ [ADMIN] Pedido enviado para SMMMIDIA:', smmmidiaResult.orderId);
-
     // Atualizar pedido com ID da SMMMIDIA e status
     await supabase
       .from('orders')
@@ -230,7 +211,7 @@ module.exports = async function handler(req, res) {
       }
     });
   } catch (error) {
-    console.error('Erro ao aprovar pedido:', error);
+    
     return res.status(500).json({
       success: false,
       message: 'Erro ao aprovar pedido',

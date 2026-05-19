@@ -843,13 +843,12 @@ const LoginPage: React.FC<{ onNavigate: (page: string) => void; onLoginSuccess: 
           // Marcar que o usuário NÃO quer permanecer logado
           localStorage.setItem('keepLoggedIn', 'false');
         }
-        
-        console.log('Login bem-sucedido:', response.data);
+
         onLoginSuccess();
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
-      console.error('Erro no login:', err);
+      
     } finally {
       setLoading(false);
     }
@@ -1173,12 +1172,12 @@ const CadastroPage: React.FC<{ onNavigate: (page: string) => void; onRegisterSuc
       
       if (response.success) {
         // Registration successful
-        console.log('Cadastro bem-sucedido:', response.data);
+        
         onRegisterSuccess();
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao criar conta. Tente novamente.');
-      console.error('Erro no cadastro:', err);
+      
     } finally {
       setLoading(false);
     }
@@ -2010,5 +2009,4 @@ export default function App() {
 
   return <HomePage onNavigate={handleNavigate} />;
 }
-
 

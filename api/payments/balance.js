@@ -18,7 +18,7 @@ module.exports = async function handler(req, res) {
   try {
     // Verificar variáveis de ambiente críticas
     if (!process.env.JWT_SECRET) {
-      console.error('❌ JWT_SECRET não configurado');
+      
       return res.status(500).json({
         success: false,
         message: 'Configuração do servidor incompleta (JWT_SECRET)'
@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-      console.error('❌ Supabase não configurado');
+      
       return res.status(500).json({
         success: false,
         message: 'Configuração do servidor incompleta (Supabase)'
@@ -34,7 +34,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
-      console.error('❌ Mercado Pago não configurado');
+      
       return res.status(500).json({
         success: false,
         message: 'Configuração do servidor incompleta (Mercado Pago)'
@@ -111,8 +111,6 @@ module.exports = async function handler(req, res) {
         notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`
       });
 
-      console.log('✅ [ADD BALANCE] Pagamento PIX criado:', payment.body.id);
-
       const transactionId = crypto.randomUUID();
       
       await supabase
@@ -153,7 +151,7 @@ module.exports = async function handler(req, res) {
         .limit(50);
 
       if (error) {
-        console.error('❌ [BALANCE HISTORY] Erro:', error);
+        
         return res.status(500).json({
           success: false,
           message: 'Erro ao buscar histórico'
@@ -228,7 +226,7 @@ module.exports = async function handler(req, res) {
         });
 
       if (orderError) {
-        console.error('❌ [PURCHASE] Erro ao criar pedido:', orderError);
+        
         return res.status(500).json({
           success: false,
           message: 'Erro ao criar pedido'
@@ -241,7 +239,7 @@ module.exports = async function handler(req, res) {
         .eq('id', user.id);
 
       if (balanceError) {
-        console.error('❌ [PURCHASE] Erro ao atualizar saldo:', balanceError);
+        
         await supabase.from('orders').delete().eq('id', orderId);
         return res.status(500).json({
           success: false,
@@ -262,8 +260,6 @@ module.exports = async function handler(req, res) {
           status: 'completed'
         });
 
-      console.log(`✅ [PURCHASE] Pedido criado com saldo! User: ${user.email}, Valor: R$ ${price}, Novo saldo: R$ ${newBalance}`);
-
       return res.status(200).json({
         success: true,
         data: {
@@ -281,8 +277,7 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('❌ [BALANCE] Erro:', error);
-    
+
     // Garantir que sempre retornamos JSON
     res.setHeader('Content-Type', 'application/json');
     

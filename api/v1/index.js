@@ -56,7 +56,6 @@ module.exports = async function handler(req, res) {
     }
 
     const user = users[0];
-    console.log(`✅ [API] Requisição autorizada para: ${user.email}`);
 
     // Ação: listar serviços
     if (action === 'services') {
@@ -171,7 +170,7 @@ module.exports = async function handler(req, res) {
         .single();
 
       if (userBalanceError) {
-        console.error('Erro ao buscar saldo:', userBalanceError);
+        
         return res.status(500).json({ error: 'Failed to check balance' });
       }
 
@@ -195,7 +194,7 @@ module.exports = async function handler(req, res) {
         .eq('id', user.id);
 
       if (balanceError) {
-        console.error('Erro ao atualizar saldo:', balanceError);
+        
         return res.status(500).json({ error: 'Failed to update balance' });
       }
 
@@ -220,8 +219,7 @@ module.exports = async function handler(req, res) {
         });
 
       if (orderError) {
-        console.error('Erro ao criar pedido:', orderError);
-        
+
         // Reverter saldo em caso de erro
         await supabase
           .from('users')
@@ -245,7 +243,7 @@ module.exports = async function handler(req, res) {
           status: 'completed'
         });
 
-      console.log(`✅ [API] Pedido criado via API: ${orderId} | User: ${user.email} | Valor: R$ ${price.toFixed(2)} | Novo saldo: R$ ${newBalance.toFixed(2)}`);
+      } | Novo saldo: R$ ${newBalance.toFixed(2)}`);
 
       return res.status(200).json({ 
         order: orderId,
@@ -312,7 +310,7 @@ module.exports = async function handler(req, res) {
         .single();
 
       if (balanceError) {
-        console.error('Erro ao buscar saldo:', balanceError);
+        
         return res.status(500).json({ error: 'Failed to get balance' });
       }
 
@@ -329,7 +327,7 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('API Error:', error);
+    
     return res.status(500).json({
       error: 'Internal server error'
     });

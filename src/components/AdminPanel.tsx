@@ -17,6 +17,7 @@ import {
   Download
 } from 'lucide-react';
 import { adminApi } from '../services/api';
+import { showSuccess, showError, showInfo, showWarning } from '../utils/toast';
 
 // Função para formatar data no horário de Brasília
 const formatDateBR = (dateString: string) => {
@@ -97,7 +98,7 @@ const AdminPanel: React.FC = () => {
         setStats(statsRes.data);
       }
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      
     } finally {
       setLoading(false);
     }
@@ -151,8 +152,7 @@ ${JSON.stringify(smmmidiaData.smmmidiaResponse, null, 2)}`;
         alert(errorMessage);
       }
     } catch (error: any) {
-      console.error('❌ [ADMIN] Erro ao aprovar pedido:', error);
-      
+
       // Tentar pegar detalhes da resposta
       const response = error.response || {};
       
@@ -191,10 +191,10 @@ ${JSON.stringify(smmmidiaData.smmmidiaResponse, null, 2)}`;
       const response = await adminApi.cancelOrder(orderId, reason);
 
       if (response.success) {
-        alert('Pedido cancelado com sucesso!');
+        showInfo('Pedido cancelado com sucesso!');
         loadData();
       } else {
-        alert(`Erro: ${response.message}`);
+        showError(`Erro: ${response.message}`);
       }
     } catch (error: any) {
       alert(`Erro ao cancelar pedido: ${error.message}`);

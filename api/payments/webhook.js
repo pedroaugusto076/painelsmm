@@ -7,15 +7,12 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    console.log('📥 [WEBHOOK] Recebido do Mercado Pago:', req.body);
 
     const { type, data } = req.body;
 
     // Mercado Pago envia notificações de diferentes tipos
     if (type === 'payment') {
       const paymentId = data.id;
-      
-      console.log('💳 [WEBHOOK] Payment ID:', paymentId);
 
       // Buscar detalhes do pagamento no Mercado Pago
       const fetch = (await import('node-fetch')).default;
@@ -27,9 +24,6 @@ module.exports = async function handler(req, res) {
       });
 
       const payment = await response.json();
-      
-      console.log('💰 [WEBHOOK] Status do pagamento:', payment.status);
-      console.log('📋 [WEBHOOK] External reference:', payment.external_reference);
 
       // Se o pagamento foi aprovado
       if (payment.status === 'approved') {
@@ -42,8 +36,7 @@ module.exports = async function handler(req, res) {
 
         // Verificar se é uma recarga de saldo (não tem external_reference ou começa com 'balance_')
         if (!orderId || orderId.startsWith('balance_')) {
-          console.log('💰 [WEBHOOK] Detectado: Recarga de saldo');
-          
+
           // Buscar transação pendente pelo payment_id
           const { data: transactions, error: txError } = await supabase
             .from('balance_transactions')
@@ -53,7 +46,7 @@ module.exports = async function handler(req, res) {
             .limit(1);
 
           if (txError || !transactions || transactions.length === 0) {
-            console.log('⚠️ [WEBHOOK] Transação de saldo não encontrada ou já processada');
+            
             return res.status(200).json({ success: true });
           }
 
@@ -67,7 +60,7 @@ module.exports = async function handler(req, res) {
             .single();
 
           if (userError || !users) {
-            console.error('❌ [WEBHOOK] Usuário não encontrado');
+            
             return res.status(200).json({ success: true });
           }
 
@@ -81,7 +74,7 @@ module.exports = async function handler(req, res) {
             .eq('id', transaction.user_id);
 
           if (updateError) {
-            console.error('❌ [WEBHOOK] Erro ao atualizar saldo:', updateError);
+            
             return res.status(200).json({ success: false });
           }
 
@@ -94,11 +87,9 @@ module.exports = async function handler(req, res) {
             })
             .eq('id', transaction.id);
 
-          console.log(`✅ [WEBHOOK] Saldo adicionado! User: ${transaction.user_id}, Valor: R$ ${transaction.amount}, Novo saldo: R$ ${newBalance}`);
         } else {
           // É um pedido normal
-          console.log('📦 [WEBHOOK] Detectado: Pedido de serviço');
-          
+
           // Atualizar pedido no banco
           const { error } = await supabase
             .from('orders')
@@ -110,9 +101,9 @@ module.exports = async function handler(req, res) {
             .eq('id', orderId);
 
           if (error) {
-            console.error('❌ [WEBHOOK] Erro ao atualizar pedido:', error);
+            
           } else {
-            console.log('✅ [WEBHOOK] Pedido atualizado com sucesso!');
+            
           }
         }
       }
@@ -121,7 +112,7 @@ module.exports = async function handler(req, res) {
     // Sempre retornar 200 para o Mercado Pago
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('❌ [WEBHOOK] Erro:', error);
+    
     // Mesmo com erro, retornar 200 para não ficar recebendo notificações repetidas
     return res.status(200).json({ success: false, error: error.message });
   }

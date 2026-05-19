@@ -26,6 +26,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { authApi, paymentApi, adminApi } from '../services/api';
+import { showSuccess, showError, showInfo, showWarning } from '../utils/toast';
 
 // Função para formatar data no horário de Brasília
 const formatDateBR = (dateString: string) => {
@@ -112,7 +113,7 @@ const BalanceCardCompact = () => {
         setBalance(response.data.user.balance || 0);
       }
     } catch (error) {
-      console.error('Erro ao carregar saldo:', error);
+      
     } finally {
       setLoading(false);
     }
@@ -201,7 +202,7 @@ const BalanceCard = () => {
         setBalance(response.data.user.balance || 0);
       }
     } catch (error) {
-      console.error('Erro ao carregar saldo:', error);
+      
     } finally {
       setLoading(false);
     }
@@ -278,7 +279,7 @@ const AddBalanceModal: React.FC<{ onClose: () => void; onSuccess: () => void; cu
     const numAmount = parseFloat(amount);
     
     if (!numAmount || numAmount <= 0) {
-      alert('Digite um valor válido');
+      showInfo('Digite um valor válido');
       return;
     }
 
@@ -295,7 +296,7 @@ const AddBalanceModal: React.FC<{ onClose: () => void; onSuccess: () => void; cu
         startPolling(response.data.paymentId);
       }
     } catch (error: any) {
-      alert(`Erro: ${error.message}`);
+      showError(`Erro: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -320,7 +321,7 @@ const AddBalanceModal: React.FC<{ onClose: () => void; onSuccess: () => void; cu
           }
         }
       } catch (error) {
-        console.error('Erro no polling:', error);
+        
       }
     }, 5000); // Verificar a cada 5 segundos
 
@@ -330,7 +331,7 @@ const AddBalanceModal: React.FC<{ onClose: () => void; onSuccess: () => void; cu
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(qrCode);
-    alert('Código PIX copiado!');
+    showSuccess('Código PIX copiado!');
   };
 
   if (showSuccess) {
@@ -474,7 +475,7 @@ const BalanceHistoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => 
         setTransactions(response.data.transactions);
       }
     } catch (error) {
-      console.error('Erro ao carregar histórico:', error);
+      
     } finally {
       setLoading(false);
     }
@@ -547,7 +548,6 @@ const BalanceHistoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => 
   );
 };
 
-
 // Dashboard Component com Sidebar
 export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const [user, setUser] = useState<any>(null);
@@ -572,7 +572,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
         setIsAdmin((response.data.user as any).is_admin === true);
       }
     } catch (error) {
-      console.error('Erro ao verificar status de admin:', error);
+      
     }
   };
 
@@ -733,12 +733,10 @@ const ServicosTab = () => {
       const response = await paymentApi.getPaymentStatus(orderId);
       if (response.success && response.data?.order) {
         const order = response.data.order;
-        console.log('🔍 [POLLING] Status do pedido:', order.status);
-        
+
         if (order.status === 'completed') {
           // Pagamento confirmado!
-          console.log('✅ [POLLING] Pagamento confirmado!');
-          
+
           // Parar polling
           if (pollingInterval) {
             clearInterval(pollingInterval);
@@ -757,7 +755,7 @@ const ServicosTab = () => {
       }
       return false;
     } catch (error) {
-      console.error('❌ [POLLING] Erro ao verificar status:', error);
+      
       return false;
     }
   };
@@ -765,8 +763,7 @@ const ServicosTab = () => {
   // Iniciar polling quando o modal PIX é aberto
   useEffect(() => {
     if (showPixModal && currentOrderId) {
-      console.log('🔄 [POLLING] Iniciando verificação automática do pagamento...');
-      
+
       // Verificar a cada 5 segundos
       const interval = setInterval(() => {
         checkPaymentStatus(currentOrderId);
@@ -779,7 +776,7 @@ const ServicosTab = () => {
         if (interval) {
           clearInterval(interval);
           setPollingInterval(null);
-          console.log('⏱️ [POLLING] Tempo limite atingido');
+          
         }
       }, 600000); // 10 minutos
     }
@@ -851,14 +848,8 @@ const ServicosTab = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    console.log('🚀 [DEBUG] Iniciando compra com saldo...');
-    console.log('📦 [DEBUG] Dados:', {
-      serviceType: selectedService,
-      packageId: selectedPackage,
-      quantity: currentPackage?.qty,
-      price: currentPackage?.price,
-      instagramUsername: instagramUsername.replace('@', ''),
+
+    ,
       postUrl: postUrl || undefined
     });
     
@@ -873,13 +864,8 @@ const ServicosTab = () => {
         postUrl: postUrl || undefined
       });
 
-      console.log('✅ [DEBUG] Resposta do servidor:', response);
-
       if (response.success && response.data) {
-        console.log('💰 [DEBUG] Compra realizada com sucesso!');
-        console.log('📝 [DEBUG] Order ID:', response.data.orderId);
-        console.log('💵 [DEBUG] Novo saldo:', response.data.newBalance);
-        
+
         // Disparar evento para atualizar saldo no header
         window.dispatchEvent(new Event('balanceUpdated'));
         
@@ -897,12 +883,11 @@ const ServicosTab = () => {
           setShowSuccessModal(false);
         }, 3000);
       } else {
-        console.error('❌ [DEBUG] Resposta sem sucesso:', response);
+        
         alert('Erro: ' + (response.message || 'Resposta inválida'));
       }
     } catch (error: any) {
-      console.error('❌ [DEBUG] Erro ao comprar:', error);
-      
+
       // Verificar se é erro de saldo insuficiente
       if (error.response?.insufficientBalance) {
         const currentBalance = error.response.currentBalance || 0;
@@ -911,10 +896,10 @@ const ServicosTab = () => {
         
         if (confirm(`Saldo insuficiente!\n\nVocê tem: R$ ${currentBalance.toFixed(2)}\nPrecisa de: R$ ${requiredAmount.toFixed(2)}\nFaltam: R$ ${missing.toFixed(2)}\n\nDeseja adicionar saldo agora?`)) {
           // Abrir modal de adicionar saldo (você pode implementar isso)
-          alert('Clique no botão "Adicionar Saldo" no topo da página');
+          showInfo('Clique no botão "Adicionar Saldo" no topo da página');
         }
       } else {
-        alert(error.message || 'Erro ao processar compra. Tente novamente.');
+        showError(error.message || 'Erro desconhecido');
       }
     } finally {
       setLoading(false);
@@ -927,14 +912,12 @@ const ServicosTab = () => {
   const copyPixCode = () => {
     if (pixData?.pixQrCode) {
       navigator.clipboard.writeText(pixData.pixQrCode);
-      alert('Código PIX copiado!');
+      showSuccess('Código PIX copiado!');
     }
   };
 
   const closePixModal = () => {
-    console.log('🔄 [DEBUG] Fechando modal do PIX');
-    console.log('📝 [DEBUG] Order ID:', currentOrderId);
-    
+
     setShowPixModal(false);
     setPixData(null);
     setCurrentOrderId(null);
@@ -944,7 +927,7 @@ const ServicosTab = () => {
     setPostUrl('');
     
     // Mostrar mensagem
-    alert('✅ PIX gerado! Após o pagamento, verifique seus pedidos na aba "Meus Pedidos" ou "Admin/Logs".');
+    showSuccess('PIX gerado! Após o pagamento, verifique seus pedidos na aba "Meus Pedidos" ou "Admin/Logs".');
   };
 
   return (
@@ -1377,7 +1360,7 @@ const AdminTab = () => {
         setPedidos(response.data.orders);
       }
     } catch (error) {
-      console.error('Erro ao carregar pedidos:', error);
+      
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -1400,14 +1383,14 @@ const AdminTab = () => {
       const data = await response.json();
       
       if (data.success) {
-        alert(`✅ Verificados ${data.data.checked} pedidos!\n${data.data.updates.length} atualizações realizadas.`);
+        showSuccess(`Verificados ${data.data.checked} pedidos!\n${data.data.updates.length} atualizações realizadas.`);
         loadOrders(); // Recarregar lista
       } else {
         alert('❌ Erro ao verificar pagamentos: ' + data.message);
       }
     } catch (error) {
-      console.error('Erro:', error);
-      alert('❌ Erro ao verificar pagamentos');
+      
+      showError('Erro ao verificar pagamentos');
     } finally {
       setChecking(false);
     }
@@ -1608,21 +1591,20 @@ const PedidosTab = () => {
   }, []);
 
   const loadOrders = async () => {
-    console.log('📋 [DEBUG] Carregando pedidos...');
+    
     try {
       const response = await paymentApi.getUserOrders();
-      console.log('✅ [DEBUG] Resposta getUserOrders:', response);
-      
+
       if (response.success && response.data) {
         // Filtrar apenas pedidos concluídos (pagos)
         const completedOrders = response.data.orders.filter((order: any) => order.status === 'completed');
-        console.log('📦 [DEBUG] Pedidos concluídos:', completedOrders.length);
+        
         setPedidos(completedOrders);
       } else {
-        console.error('❌ [DEBUG] Resposta sem sucesso:', response);
+        
       }
     } catch (error) {
-      console.error('❌ [DEBUG] Erro ao carregar pedidos:', error);
+      
     } finally {
       setLoading(false);
     }
@@ -1713,7 +1695,7 @@ const ApiTab = () => {
         setApiKey('Erro ao carregar API key');
       }
     } catch (error) {
-      console.error('Erro ao carregar API key:', error);
+      
       setApiKey('Erro ao carregar API key');
     } finally {
       setLoading(false);
@@ -1960,7 +1942,7 @@ async function listServices() {
 }
 
 const services = await listServices();
-console.log(services);`}
+`}
           />
         </div>
 
