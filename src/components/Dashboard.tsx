@@ -894,10 +894,12 @@ const ServicosTab = () => {
         const requiredAmount = error.response.requiredAmount || 0;
         const missing = requiredAmount - currentBalance;
         
-        if (confirm(`Saldo insuficiente!\n\nVocê tem: R$ ${currentBalance.toFixed(2)}\nPrecisa de: R$ ${requiredAmount.toFixed(2)}\nFaltam: R$ ${missing.toFixed(2)}\n\nDeseja adicionar saldo agora?`)) {
-          // Abrir modal de adicionar saldo (você pode implementar isso)
-          showInfo('Clique no botão "Adicionar Saldo" no topo da página');
-        }
+        showError(`Saldo insuficiente! Você tem R$ ${currentBalance.toFixed(2)} e precisa de R$ ${requiredAmount.toFixed(2)}. Faltam R$ ${missing.toFixed(2)}.`);
+        
+        // Abrir modal de adicionar saldo automaticamente após 1 segundo
+        setTimeout(() => {
+          setShowAddBalanceModal(true);
+        }, 1000);
       } else {
         showError(error.message || 'Erro desconhecido');
       }

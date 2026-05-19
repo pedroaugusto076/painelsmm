@@ -77,6 +77,8 @@ const AdminPanel: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [orderToApprove, setOrderToApprove] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -105,13 +107,17 @@ const AdminPanel: React.FC = () => {
   };
 
   const handleApproveOrder = async (orderId: string) => {
-    if (!confirm('Tem certeza que deseja aprovar e enviar este pedido ao fornecedor?')) {
-      return;
-    }
+    setOrderToApprove(orderId);
+    setShowApproveModal(true);
+  };
+
+  const confirmApproveOrder = async () => {
+    if (!orderToApprove) return;
 
     try {
-      setActionLoading(orderId);
-      const response = await adminApi.approveOrder(orderId);
+      setActionLoading(orderToApprove);
+      setShowApproveModal(false);
+      const response = await adminApi.approveOrder(orderToApprove);
 
       if (response.success) {
         // Mostrar resposta detalhada do fornecedor
@@ -608,6 +614,44 @@ ${JSON.stringify(smmmidiaData.smmmidiaResponse, null, 2)}`;
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação de Aprovação */}
+      {showApproveModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div onClick={() => setShowApproveModal(false)} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Aprovar Pedido
+              </h3>
+              
+              <p className="text-gray-600 mb-6">
+                Tem certeza que deseja aprovar e enviar este pedido ao fornecedor?
+              </p>
+              
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowApproveModal(false)}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmApproveOrder}
+                  className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition"
+                >
+                  Aprovar
+                </button>
               </div>
             </div>
           </div>
