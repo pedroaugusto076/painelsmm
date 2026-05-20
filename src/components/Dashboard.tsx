@@ -1097,13 +1097,13 @@ const ServicosTab = () => {
                 setSelectedService(service.id);
                 setSelectedPackage('');
               }}
-              className={`text-left bg-white rounded-2xl p-6 transition-all border-2 ${
+              className={`text-center bg-white rounded-2xl p-6 transition-all border-2 ${
                 isSelected
                   ? 'border-violet-500 shadow-lg scale-105'
                   : 'border-gray-100 hover:border-violet-200 hover:shadow-md'
               }`}
             >
-              <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${service.color} flex items-center justify-center mb-4`}>
+              <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${service.color} flex items-center justify-center mb-4 mx-auto`}>
                 <Icon className="h-7 w-7 text-white" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">
@@ -1120,11 +1120,11 @@ const ServicosTab = () => {
       {/* Formulário de Pedido */}
       {selectedService && (
         <div className="bg-white rounded-2xl shadow-lg p-6 lg:p-8 border border-gray-100">
-          <div className="flex items-center gap-3 mb-6">
-            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${currentService?.color} flex items-center justify-center`}>
+          <div className="flex flex-col sm:flex-row items-center gap-3 mb-6 text-center sm:text-left">
+            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${currentService?.color} flex items-center justify-center mx-auto sm:mx-0`}>
               {currentService && <currentService.icon className="h-6 w-6 text-white" />}
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-2xl font-bold text-gray-900">
                 {currentService?.name}
               </h2>
@@ -1154,7 +1154,7 @@ const ServicosTab = () => {
                       key={pkg.id}
                       type="button"
                       onClick={() => setSelectedPackage(pkg.id)}
-                      className={`p-4 rounded-xl border-2 transition-all text-left relative ${
+                      className={`p-4 rounded-xl border-2 transition-all relative ${
                         selectedPackage === pkg.id
                           ? 'border-violet-500 bg-violet-50'
                           : 'border-gray-200 hover:border-violet-200 bg-white'
@@ -1167,17 +1167,17 @@ const ServicosTab = () => {
                         </div>
                       )}
                       
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="flex justify-center items-center mb-2">
                         <span className="text-2xl font-bold text-gray-900">
                           {pkg.qty >= 1000 ? `${pkg.qty / 1000}k` : pkg.qty}
                         </span>
                         {selectedPackage === pkg.id && (
-                          <CheckCircle2 className="h-5 w-5 text-violet-600" />
+                          <CheckCircle2 className="h-5 w-5 text-violet-600 ml-2" />
                         )}
                       </div>
                       
                       {/* Quantidade + Bônus */}
-                      <div className="text-sm text-gray-600 mb-1">
+                      <div className="text-sm text-gray-600 mb-1 text-center">
                         {pkg.qty.toLocaleString()} {currentService.name.toLowerCase()}
                         {pkg.bonus && (
                           <span className="block text-xs font-bold text-orange-600 mt-0.5">
@@ -1188,7 +1188,7 @@ const ServicosTab = () => {
                       
                       {/* Preço com desconto */}
                       {pkg.originalPrice ? (
-                        <div>
+                        <div className="text-center">
                           <div className="text-sm text-gray-400 line-through mb-0.5">
                             R$ {pkg.originalPrice.toFixed(2)}
                           </div>
@@ -1200,7 +1200,7 @@ const ServicosTab = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="text-lg font-bold text-violet-600">
+                        <div className="text-lg font-bold text-violet-600 text-center">
                           R$ {pkg.price.toFixed(2)}
                         </div>
                       )}
