@@ -1,9 +1,9 @@
-const jwt = require('jsonwebtoken');
-const { createClient } = require('@supabase/supabase-js');
-const mercadopago = require('mercadopago');
-const crypto = require('crypto');
+import jwt from 'jsonwebtoken';
+import { createClient } from '@supabase/supabase-js';
+import mercadopago from 'mercadopago';
+import crypto from 'crypto';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');

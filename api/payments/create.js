@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
-const { createClient } = require('@supabase/supabase-js');
-const crypto = require('crypto');
+import jwt from 'jsonwebtoken';
+import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 // Função para criar pagamento no Mercado Pago
 async function createMercadoPagoPayment(amount, orderId, description) {
@@ -49,7 +49,7 @@ async function createMercadoPagoPayment(amount, orderId, description) {
   }
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');

@@ -1,7 +1,7 @@
 // API Pública v1 - Endpoint Único
 // Compatível com formato SMMMIDIA
-const { createClient } = require('@supabase/supabase-js');
-const crypto = require('crypto');
+import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 // Mapeamento de service IDs para tipos internos
 const SERVICE_MAPPING = {
@@ -11,7 +11,7 @@ const SERVICE_MAPPING = {
   '4': 'views'
 };
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -287,7 +287,7 @@ module.exports = async function handler(req, res) {
           status: 'completed'
         });
 
-      } | Novo saldo: R$ ${newBalance.toFixed(2)}`);
+      console.log(`Novo saldo: R$ ${newBalance.toFixed(2)}`);
 
       return res.status(200).json({ 
         order: orderId,
