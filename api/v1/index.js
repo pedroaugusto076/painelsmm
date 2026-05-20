@@ -65,7 +65,7 @@ module.exports = async function handler(req, res) {
           name: 'Instagram Seguidores Brasil',
           type: 'Default',
           category: 'Instagram',
-          rate: '0.0001',
+          rate: '0.149',
           min: '100',
           max: '10000',
           description: 'Seguidores brasileiros reais e ativos'
@@ -75,7 +75,7 @@ module.exports = async function handler(req, res) {
           name: 'Instagram Curtidas Brasil',
           type: 'Default',
           category: 'Instagram',
-          rate: '0.0001',
+          rate: '0.049',
           min: '100',
           max: '10000',
           description: 'Curtidas de perfis brasileiros'
@@ -85,9 +85,9 @@ module.exports = async function handler(req, res) {
           name: 'Instagram Comentários Brasil',
           type: 'Custom Comments',
           category: 'Instagram',
-          rate: '0.0017',
+          rate: '1.49',
           min: '10',
-          max: '500',
+          max: '1000',
           description: 'Comentários personalizados em português'
         },
         {
@@ -95,7 +95,7 @@ module.exports = async function handler(req, res) {
           name: 'Instagram Visualizações',
           type: 'Default',
           category: 'Instagram',
-          rate: '0.00001',
+          rate: '0.0049',
           min: '1000',
           max: '100000',
           description: 'Visualizações para vídeos e reels'
@@ -152,15 +152,59 @@ module.exports = async function handler(req, res) {
       );
 
       // Calcular preço baseado no serviço e quantidade
-      // Preços por unidade (mesmos do painel)
-      const rates = {
-        'followers': 0.0001,  // R$ 0,01 para 100 = R$ 0,0001 por unidade
-        'likes': 0.0001,      // R$ 0,01 para 100 = R$ 0,0001 por unidade  
-        'comments': 0.0017,   // R$ 1,70 por comentário
-        'views': 0.00001      // R$ 0,01 para 1000 = R$ 0,00001 por unidade
+      // Tabela de preços por pacote
+      const pricingTable = {
+        'followers': {
+          100: 14.90,
+          500: 64.90,
+          1000: 119.90,
+          2500: 279.90,
+          5000: 499.90,
+          10000: 899.90
+        },
+        'likes': {
+          100: 4.90,
+          500: 17.90,
+          1000: 29.90,
+          2500: 64.90,
+          5000: 119.90,
+          10000: 199.90
+        },
+        'comments': {
+          10: 14.90,
+          50: 69.90,
+          100: 139.90,
+          250: 349.90,
+          500: 699.90,
+          1000: 1399.90
+        },
+        'views': {
+          1000: 4.90,
+          5000: 19.90,
+          10000: 34.90,
+          25000: 74.90,
+          50000: 129.90,
+          100000: 229.90
+        }
       };
+
+      // Buscar preço exato da tabela ou calcular proporcionalmente
+      let price = 0;
+      const servicePricing = pricingTable[serviceType];
       
-      const price = quantity * rates[serviceType];
+      if (servicePricing && servicePricing[quantity]) {
+        // Preço exato encontrado na tabela
+        price = servicePricing[quantity];
+      } else {
+        // Calcular proporcionalmente baseado no menor pacote
+        const rates = {
+          'followers': 14.90 / 100,  // R$ 14,90 para 100 = R$ 0,149 por unidade
+          'likes': 4.90 / 100,        // R$ 4,90 para 100 = R$ 0,049 por unidade
+          'comments': 14.90 / 10,     // R$ 14,90 para 10 = R$ 1,49 por unidade
+          'views': 4.90 / 1000        // R$ 4,90 para 1000 = R$ 0,0049 por unidade
+        };
+        price = quantity * rates[serviceType];
+      }
 
       // Buscar saldo do usuário
       const { data: userData, error: userBalanceError } = await supabase

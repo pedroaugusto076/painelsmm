@@ -5,11 +5,10 @@ const SMMMIDIA_API_KEY = process.env.SMMMIDIA_API_KEY;
 
 // Mapeamento de serviços internos para IDs da SMMMIDIA
 const SERVICE_MAPPING = {
-  followers: process.env.SMMMIDIA_SERVICE_ID || '1353', // Instagram Seguidores BR
-  // Adicione outros serviços aqui conforme necessário
-  // likes: '1234',
-  // comments: '5678',
-  // views: '9012'
+  followers: '1353',  // Instagram Seguidores BR
+  likes: '1425',      // Instagram Curtidas BR
+  comments: '1034',   // Instagram Comentários BR
+  views: '1429'       // Instagram Visualizações
 };
 
 /**

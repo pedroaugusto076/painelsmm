@@ -79,6 +79,13 @@ const AdminPanel: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [orderToApprove, setOrderToApprove] = useState<string | null>(null);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultData, setResultData] = useState<{
+    success: boolean;
+    title: string;
+    message: string;
+    details?: any;
+  } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -120,69 +127,63 @@ const AdminPanel: React.FC = () => {
       const response = await adminApi.approveOrder(orderToApprove);
 
       if (response.success) {
-        // Mostrar resposta detalhada do fornecedor
+        // Mostrar modal de sucesso
         const smmmidiaData = response.data;
-        const message = `✅ Pedido enviado com sucesso!
-        
-📋 Detalhes:
-• ID Local: ${smmmidiaData.orderId}
-• ID SMMMIDIA: ${smmmidiaData.smmmidiaOrderId}
-
-📊 Resposta do Fornecedor:
-${JSON.stringify(smmmidiaData.smmmidiaResponse, null, 2)}`;
-        
-        alert(message);
+        setResultData({
+          success: true,
+          title: '✅ Pedido Enviado com Sucesso!',
+          message: 'O pedido foi aprovado e enviado ao fornecedor.',
+          details: {
+            'ID Local': smmmidiaData.orderId,
+            'ID SMMMIDIA': smmmidiaData.smmmidiaOrderId,
+            'Resposta do Fornecedor': JSON.stringify(smmmidiaData.smmmidiaResponse || smmmidiaData, null, 2)
+          }
+        });
+        setShowResultModal(true);
         loadData();
       } else {
-        // Mostrar erro detalhado
-        let errorMessage = `❌ Erro: ${response.message}`;
-        
-        if (response.error) {
-          errorMessage += `\n\n🔍 Erro Específico:\n${response.error}`;
-        }
-        
-        if (response.apiResponse) {
-          errorMessage += `\n\n📡 Resposta da API SMMMIDIA:\n${JSON.stringify(response.apiResponse, null, 2)}`;
-        }
-        
-        if (response.details) {
-          errorMessage += `\n\n⚙️ Configuração:`;
-          errorMessage += `\n• API Configurada: ${response.details.apiConfigured ? 'Sim ✅' : 'Não ❌'}`;
-          errorMessage += `\n• API URL: ${response.details.apiUrl}`;
-          errorMessage += `\n• Serviço: ${response.details.serviceType}`;
-          errorMessage += `\n• Service ID: ${response.details.serviceId}`;
-          errorMessage += `\n• Link: ${response.details.link}`;
-          errorMessage += `\n• Quantidade: ${response.details.quantity}`;
-        }
-        
-        alert(errorMessage);
+        // Mostrar modal de erro
+        setResultData({
+          success: false,
+          title: '❌ Erro ao Aprovar Pedido',
+          message: response.message || 'Erro ao enviar para o fornecedor',
+          details: {
+            ...(response.error && { 'Erro Específico': response.error }),
+            ...(response.apiResponse && { 'Resposta da API SMMMIDIA': JSON.stringify(response.apiResponse, null, 2) }),
+            ...(response.details && {
+              'API Configurada': response.details.apiConfigured ? 'Sim ✅' : 'Não ❌',
+              'API URL': response.details.apiUrl,
+              'Serviço': response.details.serviceType,
+              'Service ID': response.details.serviceId,
+              'Link': response.details.link,
+              'Quantidade': response.details.quantity
+            })
+          }
+        });
+        setShowResultModal(true);
       }
     } catch (error: any) {
-
       // Tentar pegar detalhes da resposta
       const response = error.response || {};
       
-      let errorMessage = `❌ Erro ao aprovar pedido: ${error.message}`;
-      
-      if (response.error) {
-        errorMessage += `\n\n🔍 Erro Específico:\n${response.error}`;
-      }
-      
-      if (response.apiResponse) {
-        errorMessage += `\n\n📡 Resposta da API SMMMIDIA:\n${JSON.stringify(response.apiResponse, null, 2)}`;
-      }
-      
-      if (response.details) {
-        errorMessage += `\n\n⚙️ Configuração:`;
-        errorMessage += `\n• API Configurada: ${response.details.apiConfigured ? 'Sim ✅' : 'Não ❌'}`;
-        errorMessage += `\n• API URL: ${response.details.apiUrl}`;
-        errorMessage += `\n• Serviço: ${response.details.serviceType}`;
-        errorMessage += `\n• Service ID: ${response.details.serviceId}`;
-        errorMessage += `\n• Link: ${response.details.link}`;
-        errorMessage += `\n• Quantidade: ${response.details.quantity}`;
-      }
-      
-      alert(errorMessage);
+      setResultData({
+        success: false,
+        title: '❌ Erro ao Aprovar Pedido',
+        message: error.message || 'Erro desconhecido',
+        details: {
+          ...(response.error && { 'Erro Específico': response.error }),
+          ...(response.apiResponse && { 'Resposta da API SMMMIDIA': JSON.stringify(response.apiResponse, null, 2) }),
+          ...(response.details && {
+            'API Configurada': response.details.apiConfigured ? 'Sim ✅' : 'Não ❌',
+            'API URL': response.details.apiUrl,
+            'Serviço': response.details.serviceType,
+            'Service ID': response.details.serviceId,
+            'Link': response.details.link,
+            'Quantidade': response.details.quantity
+          })
+        }
+      });
+      setShowResultModal(true);
     } finally {
       setActionLoading(null);
     }
@@ -653,6 +654,73 @@ ${JSON.stringify(smmmidiaData.smmmidiaResponse, null, 2)}`;
                   Aprovar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Resultado (Sucesso ou Erro) */}
+      {showResultModal && resultData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div onClick={() => setShowResultModal(false)} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className={`p-6 border-b ${resultData.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${resultData.success ? 'bg-green-100' : 'bg-red-100'}`}>
+                    {resultData.success ? (
+                      <CheckCircle className={`h-6 w-6 ${resultData.success ? 'text-green-600' : 'text-red-600'}`} />
+                    ) : (
+                      <AlertCircle className="h-6 w-6 text-red-600" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className={`text-xl font-bold ${resultData.success ? 'text-green-900' : 'text-red-900'}`}>
+                      {resultData.title}
+                    </h3>
+                    <p className={`text-sm ${resultData.success ? 'text-green-700' : 'text-red-700'}`}>
+                      {resultData.message}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowResultModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Body com Detalhes */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+              {resultData.details && Object.keys(resultData.details).length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="font-bold text-gray-900 text-lg mb-3">📋 Detalhes:</h4>
+                  {Object.entries(resultData.details).map(([key, value]) => (
+                    <div key={key} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <p className="text-sm font-semibold text-gray-700 mb-2">{key}:</p>
+                      <div className="bg-white rounded p-3 border border-gray-300">
+                        <pre className="text-xs text-gray-800 whitespace-pre-wrap break-all font-mono">
+                          {typeof value === 'string' ? value : JSON.stringify(value, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={() => setShowResultModal(false)}
+                className={`w-full px-4 py-3 ${resultData.success ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold rounded-xl transition`}
+              >
+                Fechar
+              </button>
             </div>
           </div>
         </div>

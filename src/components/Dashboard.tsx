@@ -791,14 +791,14 @@ const ServicosTab = () => {
       name: 'Seguidores',
       icon: Users,
       color: 'from-violet-500 to-pink-500',
-      description: 'Aumente seus seguidores com perfis reais e ativos',
+      description: '+ receba brindes nos pacotes',
       packages: [
-        { id: '100', qty: 100, price: 0.01, originalPrice: null, discount: null, bonus: false },
-        { id: '500', qty: 500, price: 75, originalPrice: null, discount: null, bonus: false },
-        { id: '1000', qty: 1000, price: 150, originalPrice: null, discount: null, bonus: false },
-        { id: '2500', qty: 2500, price: 337.5, originalPrice: 375, discount: 10, bonus: true },
-        { id: '5000', qty: 5000, price: 594, originalPrice: 742.5, discount: 20, bonus: true },
-        { id: '10000', qty: 10000, price: 1039.5, originalPrice: 1485, discount: 30, bonus: true },
+        { id: '100', qty: 100, price: 14.90, originalPrice: null, discount: null, bonus: false },
+        { id: '500', qty: 500, price: 64.90, originalPrice: null, discount: null, bonus: false },
+        { id: '1000', qty: 1000, price: 119.90, originalPrice: null, discount: null, bonus: false },
+        { id: '2500', qty: 2500, price: 279.90, originalPrice: null, discount: 30, bonus: true },
+        { id: '5000', qty: 5000, price: 499.90, originalPrice: null, discount: 40, bonus: true },
+        { id: '10000', qty: 10000, price: 899.90, originalPrice: null, discount: 50, bonus: true },
       ]
     },
     {
@@ -806,14 +806,14 @@ const ServicosTab = () => {
       name: 'Curtidas',
       icon: ThumbsUp,
       color: 'from-red-500 to-orange-500',
-      description: 'Mais curtidas para suas publicações',
+      description: '+ receba brindes nos pacotes',
       packages: [
-        { id: '100', qty: 100, price: 12, originalPrice: null, discount: null, bonus: false },
-        { id: '500', qty: 500, price: 55, originalPrice: null, discount: null, bonus: false },
-        { id: '1000', qty: 1000, price: 100, originalPrice: null, discount: null, bonus: false },
-        { id: '2500', qty: 2500, price: 225, originalPrice: 250, discount: 10, bonus: true },
-        { id: '5000', qty: 5000, price: 380, originalPrice: 475, discount: 20, bonus: true },
-        { id: '10000', qty: 10000, price: 630, originalPrice: 900, discount: 30, bonus: true },
+        { id: '100', qty: 100, price: 4.90, originalPrice: null, discount: null, bonus: false },
+        { id: '500', qty: 500, price: 17.90, originalPrice: null, discount: null, bonus: false },
+        { id: '1000', qty: 1000, price: 29.90, originalPrice: null, discount: null, bonus: false },
+        { id: '2500', qty: 2500, price: 64.90, originalPrice: null, discount: 30, bonus: true },
+        { id: '5000', qty: 5000, price: 119.90, originalPrice: null, discount: 40, bonus: true },
+        { id: '10000', qty: 10000, price: 199.90, originalPrice: null, discount: 50, bonus: true },
       ]
     },
     {
@@ -823,12 +823,12 @@ const ServicosTab = () => {
       color: 'from-blue-500 to-cyan-500',
       description: 'Comentários reais e engajados',
       packages: [
-        { id: '10', qty: 10, price: 20, originalPrice: null, discount: null, bonus: false },
-        { id: '25', qty: 25, price: 45, originalPrice: null, discount: null, bonus: false },
-        { id: '50', qty: 50, price: 85, originalPrice: null, discount: null, bonus: false },
-        { id: '100', qty: 100, price: 153, originalPrice: 170, discount: 10, bonus: true },
-        { id: '200', qty: 200, price: 256, originalPrice: 320, discount: 20, bonus: true },
-        { id: '500', qty: 500, price: 525, originalPrice: 750, discount: 30, bonus: true },
+        { id: '10', qty: 10, price: 14.90, originalPrice: null, discount: null, bonus: false },
+        { id: '50', qty: 50, price: 69.90, originalPrice: null, discount: null, bonus: false },
+        { id: '100', qty: 100, price: 139.90, originalPrice: null, discount: null, bonus: false },
+        { id: '250', qty: 250, price: 349.90, originalPrice: null, discount: 30, bonus: false },
+        { id: '500', qty: 500, price: 699.90, originalPrice: null, discount: 40, bonus: false },
+        { id: '1000', qty: 1000, price: 1399.90, originalPrice: null, discount: 50, bonus: false },
       ]
     },
     {
@@ -836,14 +836,14 @@ const ServicosTab = () => {
       name: 'Visualizações',
       icon: PlayCircle,
       color: 'from-green-500 to-emerald-500',
-      description: 'Aumente as visualizações dos seus vídeos',
+      description: '+ receba brindes nos pacotes',
       packages: [
-        { id: '1000', qty: 1000, price: 10, originalPrice: null, discount: null, bonus: false },
-        { id: '5000', qty: 5000, price: 45, originalPrice: null, discount: null, bonus: false },
-        { id: '10000', qty: 10000, price: 85, originalPrice: null, discount: null, bonus: false },
-        { id: '25000', qty: 25000, price: 189, originalPrice: 210, discount: 10, bonus: true },
-        { id: '50000', qty: 50000, price: 320, originalPrice: 400, discount: 20, bonus: true },
-        { id: '100000', qty: 100000, price: 525, originalPrice: 750, discount: 30, bonus: true },
+        { id: '1000', qty: 1000, price: 4.90, originalPrice: null, discount: null, bonus: false },
+        { id: '5000', qty: 5000, price: 19.90, originalPrice: null, discount: null, bonus: false },
+        { id: '10000', qty: 10000, price: 34.90, originalPrice: null, discount: null, bonus: false },
+        { id: '25000', qty: 25000, price: 74.90, originalPrice: null, discount: 30, bonus: true },
+        { id: '50000', qty: 50000, price: 129.90, originalPrice: null, discount: 40, bonus: true },
+        { id: '100000', qty: 100000, price: 229.90, originalPrice: null, discount: 50, bonus: true },
       ]
     }
   ];
@@ -1086,7 +1086,7 @@ const ServicosTab = () => {
       )}
 
       {/* Grid de Serviços */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 sm:px-0">
         {services.map((service) => {
           const Icon = service.icon;
           const isSelected = selectedService === service.id;
@@ -1135,17 +1135,17 @@ const ServicosTab = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Seleção de Pacotes */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-3">
+              <label className="block text-sm font-bold text-gray-700 mb-3 text-center sm:text-left">
                 Escolha o Pacote
               </label>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {currentService?.packages.map((pkg) => {
                   // Definir cor do badge baseado no desconto
-                  const badgeColor = pkg.discount === 10 
+                  const badgeColor = pkg.discount === 30 
                     ? 'from-green-400 to-emerald-400' 
-                    : pkg.discount === 20 
+                    : pkg.discount === 40 
                     ? 'from-green-500 to-emerald-500' 
-                    : pkg.discount === 30 
+                    : pkg.discount === 50 
                     ? 'from-green-600 to-emerald-600' 
                     : '';
                   
