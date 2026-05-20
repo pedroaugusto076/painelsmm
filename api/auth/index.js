@@ -301,7 +301,7 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      const resetLink = `${process.env.FRONTEND_URL || 'https://painelsmm-two.vercel.app'}/?reset-token=${resetToken}`;
+      const resetLink = `${process.env.FRONTEND_URL || 'https://painelsmm-two.vercel.app'}/?token=${resetToken}`;
 
       // Enviar email usando Resend
       try {
