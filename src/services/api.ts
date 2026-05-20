@@ -147,7 +147,7 @@ export const authApi = {
   // Forgot password
   forgotPassword: async (email: string): Promise<ApiResponse & { waitSeconds?: number }> => {
     try {
-      return await apiRequest('/auth/forgot-password', {
+      return await apiRequest('/auth?action=forgot-password', {
         method: 'POST',
         body: JSON.stringify({ email }),
       });
@@ -158,10 +158,10 @@ export const authApi = {
   },
 
   // Reset password
-  resetPassword: async (token: string, password: string, confirmPassword: string): Promise<ApiResponse> => {
-    return apiRequest('/auth/reset-password', {
+  resetPassword: async (token: string, newPassword: string): Promise<ApiResponse> => {
+    return apiRequest('/auth?action=reset-password', {
       method: 'POST',
-      body: JSON.stringify({ token, password, confirmPassword }),
+      body: JSON.stringify({ token, newPassword }),
     });
   },
 

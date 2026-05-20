@@ -243,9 +243,152 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    // ============================================
+    // FORGOT PASSWORD
+    // ============================================
+    if (action === 'forgot-password') {
+      const { email } = req.body;
+
+      // Validação
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email é obrigatório'
+        });
+      }
+
+      // Buscar usuário
+      const { data: users, error: userError } = await supabase
+        .from('users')
+        .select('id, email, name')
+        .eq('email', email.toLowerCase().trim())
+        .limit(1);
+
+      if (userError) {
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao buscar usuário'
+        });
+      }
+
+      // Por segurança, sempre retornar sucesso mesmo se o email não existir
+      if (!users || users.length === 0) {
+        return res.status(200).json({
+          success: true,
+          message: 'Se o email estiver cadastrado, você receberá instruções para redefinir sua senha.'
+        });
+      }
+
+      const user = users[0];
+
+      // Gerar token de recuperação (válido por 1 hora)
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 3600000).toISOString(); // 1 hora
+
+      // Salvar token no banco
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          reset_token: resetToken,
+          reset_token_expiry: resetTokenExpiry
+        })
+        .eq('id', user.id);
+
+      if (updateError) {
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao gerar token de recuperação'
+        });
+      }
+
+      const resetLink = `${process.env.FRONTEND_URL || 'https://painelsmm-two.vercel.app'}/reset-password?token=${resetToken}`;
+
+      return res.status(200).json({
+        success: true,
+        message: 'Se o email estiver cadastrado, você receberá instruções para redefinir sua senha.',
+        // Em desenvolvimento, retornar o link (REMOVER EM PRODUÇÃO)
+        ...(process.env.NODE_ENV === 'development' && { resetLink })
+      });
+    }
+
+    // ============================================
+    // RESET PASSWORD
+    // ============================================
+    if (action === 'reset-password') {
+      const { token, newPassword } = req.body;
+
+      // Validações
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token é obrigatório'
+        });
+      }
+
+      if (!newPassword || newPassword.length < 8) {
+        return res.status(400).json({
+          success: false,
+          message: 'A senha deve ter no mínimo 8 caracteres'
+        });
+      }
+
+      // Buscar usuário pelo token
+      const { data: users, error: userError } = await supabase
+        .from('users')
+        .select('id, email, reset_token_expiry')
+        .eq('reset_token', token)
+        .limit(1);
+
+      if (userError || !users || users.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token inválido ou expirado'
+        });
+      }
+
+      const user = users[0];
+
+      // Verificar se o token expirou
+      const now = new Date();
+      const expiry = new Date(user.reset_token_expiry);
+
+      if (now > expiry) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token expirado. Solicite uma nova recuperação de senha.'
+        });
+      }
+
+      // Hash da nova senha
+      const saltRounds = 12;
+      const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+
+      // Atualizar senha e limpar token
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          password_hash: passwordHash,
+          reset_token: null,
+          reset_token_expiry: null
+        })
+        .eq('id', user.id);
+
+      if (updateError) {
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao atualizar senha'
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Senha redefinida com sucesso! Você já pode fazer login.'
+      });
+    }
+
     return res.status(400).json({
       success: false,
-      message: 'Ação inválida. Use: login ou register'
+      message: 'Ação inválida. Use: login, register, forgot-password ou reset-password'
     });
 
   } catch (error) {
