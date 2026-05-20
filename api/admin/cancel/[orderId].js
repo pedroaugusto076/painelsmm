@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const { createClient } = require('@supabase/supabase-js');
+import jwt from 'jsonwebtoken';
+import { createClient } from '@supabase/supabase-js';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
@@ -51,6 +51,13 @@ module.exports = async function handler(req, res) {
     const { orderId } = req.query;
     const { reason } = req.body;
 
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Motivo do cancelamento é obrigatório'
+      });
+    }
+
     const supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_ANON_KEY
@@ -63,7 +70,7 @@ module.exports = async function handler(req, res) {
       .from('orders')
       .update({
         status: 'cancelled',
-        cancel_reason: reason || 'Cancelado pelo administrador',
+        cancel_reason: reason.trim(),
         updated_at: new Date().toISOString()
       })
       .eq('id', orderId);
@@ -87,4 +94,4 @@ module.exports = async function handler(req, res) {
       message: 'Erro ao cancelar pedido'
     });
   }
-};
+}

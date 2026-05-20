@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const { createClient } = require('@supabase/supabase-js');
+import jwt from 'jsonwebtoken';
+import { createClient } from '@supabase/supabase-js';
 
 // Mapeamento de serviços para IDs da SMMMIDIA
 const SERVICE_MAPPING = {
@@ -67,7 +67,7 @@ async function sendToSMMIDIA(serviceType, link, quantity) {
   }
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
@@ -218,4 +218,4 @@ module.exports = async function handler(req, res) {
       error: error.message
     });
   }
-};
+}
