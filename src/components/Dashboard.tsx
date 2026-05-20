@@ -2082,28 +2082,7 @@ const PerfilTab = ({ user }: { user: any }) => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-6 border border-gray-200">
-        <h3 className="font-bold text-gray-900 mb-4">Alterar Senha</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Senha Atual</label>
-            <input
-              type="password"
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Nova Senha</label>
-            <input
-              type="password"
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none"
-            />
-          </div>
-          <button className="px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl transition">
-            Alterar Senha
-          </button>
-        </div>
-      </div>
+
     </div>
   );
 };

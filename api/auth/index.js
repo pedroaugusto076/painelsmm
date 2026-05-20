@@ -271,11 +271,11 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      // Por segurança, sempre retornar sucesso mesmo se o email não existir
+      // Verificar se o email está cadastrado
       if (!users || users.length === 0) {
-        return res.status(200).json({
-          success: true,
-          message: 'Se o email estiver cadastrado, você receberá instruções para redefinir sua senha.'
+        return res.status(404).json({
+          success: false,
+          message: 'Este email não está cadastrado em nosso sistema.'
         });
       }
 
