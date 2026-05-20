@@ -301,7 +301,108 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      const resetLink = `${process.env.FRONTEND_URL || 'https://painelsmm-two.vercel.app'}/reset-password?token=${resetToken}`;
+      const resetLink = `${process.env.FRONTEND_URL || 'https://painelsmm-two.vercel.app'}/?reset-token=${resetToken}`;
+
+      // Enviar email usando Resend
+      try {
+        const resendApiKey = process.env.RESEND_API_KEY;
+        const emailFrom = process.env.EMAIL_FROM || 'testsmm <onboarding@resend.dev>';
+
+        if (resendApiKey) {
+          const emailResponse = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${resendApiKey}`
+            },
+            body: JSON.stringify({
+              from: emailFrom,
+              to: user.email,
+              subject: 'Recuperação de Senha - testsmm',
+              html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                </head>
+                <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
+                    <tr>
+                      <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                          <!-- Header -->
+                          <tr>
+                            <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
+                              <h1 style="color: #ffffff; margin: 0; font-size: 28px;">🔐 Recuperação de Senha</h1>
+                            </td>
+                          </tr>
+                          
+                          <!-- Content -->
+                          <tr>
+                            <td style="padding: 40px 30px;">
+                              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                                Olá <strong>${user.name}</strong>,
+                              </p>
+                              
+                              <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 0 0 30px 0;">
+                                Recebemos uma solicitação para redefinir a senha da sua conta no <strong>testsmm</strong>. 
+                                Clique no botão abaixo para criar uma nova senha:
+                              </p>
+                              
+                              <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                  <td align="center" style="padding: 20px 0;">
+                                    <a href="${resetLink}" 
+                                       style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                              color: #ffffff; text-decoration: none; padding: 16px 40px; 
+                                              border-radius: 8px; font-weight: bold; font-size: 16px;">
+                                      Redefinir Senha
+                                    </a>
+                                  </td>
+                                </tr>
+                              </table>
+                              
+                              <p style="color: #666666; font-size: 13px; line-height: 1.6; margin: 30px 0 0 0; padding: 20px; background-color: #f9f9f9; border-left: 4px solid #667eea; border-radius: 4px;">
+                                <strong>⏰ Este link expira em 1 hora.</strong><br>
+                                Se você não solicitou a recuperação de senha, ignore este email. Sua senha permanecerá inalterada.
+                              </p>
+                              
+                              <p style="color: #999999; font-size: 12px; line-height: 1.6; margin: 20px 0 0 0;">
+                                Se o botão não funcionar, copie e cole este link no seu navegador:<br>
+                                <a href="${resetLink}" style="color: #667eea; word-break: break-all;">${resetLink}</a>
+                              </p>
+                            </td>
+                          </tr>
+                          
+                          <!-- Footer -->
+                          <tr>
+                            <td style="background-color: #f9f9f9; padding: 20px 30px; text-align: center; border-top: 1px solid #eeeeee;">
+                              <p style="color: #999999; font-size: 12px; margin: 0;">
+                                © ${new Date().getFullYear()} testsmm. Todos os direitos reservados.
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </body>
+                </html>
+              `
+            })
+          });
+
+          const emailResult = await emailResponse.json();
+
+          if (!emailResponse.ok) {
+            console.error('Erro ao enviar email:', emailResult);
+          }
+        }
+      } catch (emailError) {
+        console.error('Erro ao enviar email:', emailError);
+        // Não retornar erro para o usuário, apenas logar
+      }
 
       return res.status(200).json({
         success: true,

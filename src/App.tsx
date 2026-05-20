@@ -1426,7 +1426,7 @@ const ResetPasswordPage: React.FC<{ onNavigate: (page: string) => void }> = ({ o
     setLoading(true);
 
     try {
-      const response = await authApi.resetPassword(token, password, confirmPassword);
+      const response = await authApi.resetPassword(token, password);
       
       if (response.success) {
         setSuccess(true);
