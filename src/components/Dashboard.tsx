@@ -1086,7 +1086,7 @@ const ServicosTab = () => {
       )}
 
       {/* Grid de Serviços */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 justify-items-center sm:justify-items-stretch">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {services.map((service) => {
           const Icon = service.icon;
           const isSelected = selectedService === service.id;
@@ -1097,7 +1097,7 @@ const ServicosTab = () => {
                 setSelectedService(service.id);
                 setSelectedPackage('');
               }}
-              className={`text-left bg-white rounded-2xl p-6 transition-all border-2 w-full max-w-sm sm:max-w-none ${
+              className={`text-left bg-white rounded-2xl p-6 transition-all border-2 ${
                 isSelected
                   ? 'border-violet-500 shadow-lg scale-105'
                   : 'border-gray-100 hover:border-violet-200 hover:shadow-md'
