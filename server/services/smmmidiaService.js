@@ -18,9 +18,13 @@ const SERVICE_MAPPING = {
  * @param {number} quantity - Quantidade desejada
  * @returns {Promise<Object>} - Resposta da API com order ID
  */
-function buildCommentsPayload(commentText, quantity) {
-  const text = commentText.trim();
-  return Array.from({ length: quantity }, () => text).join('\n');
+function parseCommentLines(text) {
+  if (!text || typeof text !== 'string') return [];
+  return text.split('\n').map((line) => line.trim()).filter((line) => line.length > 0);
+}
+
+function buildCommentsPayload(commentText) {
+  return parseCommentLines(commentText).join('\n');
 }
 
 export async function createOrder(serviceType, link, quantity, commentText) {
@@ -46,7 +50,8 @@ export async function createOrder(serviceType, link, quantity, commentText) {
       if (!commentText || !commentText.trim()) {
         throw new Error('Texto do comentário não informado no pedido');
       }
-      payload.comments = buildCommentsPayload(commentText, quantity);
+      payload.comments = buildCommentsPayload(commentText);
+      payload.quantity = parseCommentLines(commentText).length;
     }
 
     console.log('📤 Enviando pedido para SMMMIDIA:', {

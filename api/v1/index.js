@@ -2,6 +2,7 @@
 // Compatível com formato SMMMIDIA
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import { validateCommentLines } from '../../lib/commentUtils.js';
 
 // Mapeamento de service IDs para tipos internos
 const SERVICE_MAPPING = {
@@ -129,8 +130,11 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Invalid service ID' });
       }
 
-      if (serviceType === 'comments' && (!comments || !String(comments).trim())) {
-        return res.status(400).json({ error: 'Comments text is required for custom comments service (service 3)' });
+      if (serviceType === 'comments') {
+        const commentValidation = validateCommentLines(comments, quantity);
+        if (!commentValidation.valid) {
+          return res.status(400).json({ error: commentValidation.message });
+        }
       }
 
       // Extrair username do Instagram do link
@@ -249,7 +253,9 @@ export default async function handler(req, res) {
       // Criar pedido no banco (status completed = confirmado, aguardando aprovação do admin)
       const orderId = crypto.randomUUID();
 
-      const commentText = serviceType === 'comments' ? String(comments).trim() : null;
+      const commentText = serviceType === 'comments'
+        ? validateCommentLines(comments, quantity).payload
+        : null;
 
       const { error: orderError } = await supabase
         .from('orders')

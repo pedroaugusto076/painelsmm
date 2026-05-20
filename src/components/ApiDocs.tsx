@@ -168,8 +168,10 @@ const ApiDocs: React.FC = () => {
   "service": "3",
   "link": "https://instagram.com/p/ABC123",
   "quantity": 10,
-  "comments": "Adorei esse conteúdo!"
-}`}
+  "comments": "oi tudo bem\\nmeu nome é pedro\\nteste"
+}
+
+// "comments": uma linha = um comentário. A quantidade de linhas deve ser igual a "quantity".`}
             />
 
             <h4 className="font-semibold text-gray-900 mt-4 mb-2">Parâmetros:</h4>
@@ -218,7 +220,7 @@ const ApiDocs: React.FC = () => {
                     <td className="px-4 py-2 font-mono text-xs">comments</td>
                     <td className="px-4 py-2">string</td>
                     <td className="px-4 py-2">⚠️ Serviço 3</td>
-                    <td className="px-4 py-2">Texto do comentário (obrigatório para comentários personalizados)</td>
+                    <td className="px-4 py-2">Comentários (um por linha; quantidade de linhas = quantity)</td>
                   </tr>
                 </tbody>
               </table>

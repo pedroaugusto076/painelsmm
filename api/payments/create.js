@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import { validateCommentLines } from '../../../lib/commentUtils.js';
 
 // Função para criar pagamento no Mercado Pago
 async function createMercadoPagoPayment(amount, orderId, description) {
@@ -105,11 +106,14 @@ export default async function handler(req, res) {
       });
     }
 
-    if (serviceType === 'comments' && (!commentText || !commentText.trim())) {
-      return res.status(400).json({
-        success: false,
-        message: 'Texto do comentário é obrigatório para pedidos de comentários'
-      });
+    if (serviceType === 'comments') {
+      const commentValidation = validateCommentLines(commentText, quantity);
+      if (!commentValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: commentValidation.message
+        });
+      }
     }
 
     if (['likes', 'comments', 'views'].includes(serviceType) && !postUrl) {
@@ -133,7 +137,9 @@ export default async function handler(req, res) {
         price: price,
         instagram_username: instagramUsername,
         post_url: postUrl,
-        comment_text: serviceType === 'comments' ? commentText.trim() : null,
+        comment_text: serviceType === 'comments'
+          ? validateCommentLines(commentText, quantity).payload
+          : null,
         status: 'pending',
         payment_status: 'pending'
       })

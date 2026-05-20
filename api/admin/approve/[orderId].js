@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
+import { buildCommentsPayload, parseCommentLines, validateCommentLines } from '../../../../lib/commentUtils.js';
 
 // Mapeamento de serviços para IDs da SMMMIDIA
 const SERVICE_MAPPING = {
@@ -8,11 +9,6 @@ const SERVICE_MAPPING = {
   comments: process.env.SMMMIDIA_SERVICE_COMMENTS || '1355',
   views: process.env.SMMMIDIA_SERVICE_VIEWS || '1356'
 };
-
-function buildCommentsPayload(commentText, quantity) {
-  const text = commentText.trim();
-  return Array.from({ length: quantity }, () => text).join('\n');
-}
 
 async function sendToSMMIDIA(serviceType, link, quantity, commentText) {
   try {
@@ -35,7 +31,8 @@ async function sendToSMMIDIA(serviceType, link, quantity, commentText) {
       if (!commentText || !commentText.trim()) {
         throw new Error('Texto do comentário não informado no pedido');
       }
-      payload.comments = buildCommentsPayload(commentText, quantity);
+      payload.comments = buildCommentsPayload(commentText);
+      payload.quantity = parseCommentLines(commentText).length;
     }
 
     const response = await fetch(process.env.SMMMIDIA_API_URL || 'https://smmmidia.com/api/v2', {
@@ -170,11 +167,14 @@ export default async function handler(req, res) {
       });
     }
 
-    if (order.service_type === 'comments' && !order.comment_text?.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Pedido de comentários sem texto definido'
-      });
+    if (order.service_type === 'comments') {
+      const commentValidation = validateCommentLines(order.comment_text, order.quantity);
+      if (!commentValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: commentValidation.message
+        });
+      }
     }
 
     // Enviar para SMMMIDIA

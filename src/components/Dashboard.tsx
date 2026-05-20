@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { authApi, paymentApi, adminApi } from '../services/api';
 import { showSuccess, showError, showInfo, showWarning } from '../utils/toast';
+import { countCommentLines, limitCommentTextInput, validateCommentLines } from '../utils/commentUtils';
 
 // Função para formatar data no horário de Brasília
 const formatDateBR = (dateString: string) => {
@@ -857,9 +858,12 @@ const ServicosTab = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (selectedService === 'comments' && !commentText.trim()) {
-      showError('Informe o texto que será escrito no comentário');
-      return;
+    if (selectedService === 'comments' && currentPackage) {
+      const commentValidation = validateCommentLines(commentText, currentPackage.qty);
+      if (!commentValidation.valid) {
+        showError(commentValidation.message || 'Comentários inválidos');
+        return;
+      }
     }
 
     setLoading(true);
@@ -873,7 +877,9 @@ const ServicosTab = () => {
         price: currentPackage!.price,
         instagramUsername: instagramUsername.replace('@', ''),
         postUrl: postUrl || undefined,
-        commentText: selectedService === 'comments' ? commentText.trim() : undefined,
+        commentText: selectedService === 'comments'
+          ? validateCommentLines(commentText, currentPackage!.qty).lines.join('\n')
+          : undefined,
       });
 
       if (response.success && response.data) {
@@ -1171,7 +1177,12 @@ const ServicosTab = () => {
                     <button
                       key={pkg.id}
                       type="button"
-                      onClick={() => setSelectedPackage(pkg.id)}
+                      onClick={() => {
+                        setSelectedPackage(pkg.id);
+                        if (selectedService === 'comments') {
+                          setCommentText(limitCommentTextInput(commentText, pkg.qty));
+                        }
+                      }}
                       className={`p-4 rounded-xl border-2 transition-all relative ${
                         selectedPackage === pkg.id
                           ? 'border-violet-500 bg-violet-50'
@@ -1271,21 +1282,35 @@ const ServicosTab = () => {
                   </div>
                 )}
 
-                {selectedService === 'comments' && (
+                {selectedService === 'comments' && currentPackage && (
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
-                      Texto do Comentário
+                      Comentários ({currentPackage.qty} linhas)
                     </label>
                     <textarea
                       value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none transition resize-y min-h-[100px]"
-                      placeholder="Ex: Adorei esse conteúdo! 🔥"
+                      onChange={(e) => {
+                        setCommentText(limitCommentTextInput(e.target.value, currentPackage.qty));
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && countCommentLines(commentText) >= currentPackage.qty) {
+                          e.preventDefault();
+                        }
+                      }}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none transition resize-y min-h-[140px] font-mono text-sm"
+                      placeholder={`Escreva exatamente ${currentPackage.qty} comentários, um por linha:\n\noi tudo bem\nmeu nome é pedro\nteste`}
                       required
-                      maxLength={500}
+                      rows={Math.min(currentPackage.qty, 12)}
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Este texto será usado nos comentários do pedido (repetido conforme a quantidade)
+                    <p className={`text-xs mt-1 ${
+                      countCommentLines(commentText) === currentPackage.qty
+                        ? 'text-green-600 font-semibold'
+                        : countCommentLines(commentText) > currentPackage.qty
+                          ? 'text-red-600 font-semibold'
+                          : 'text-gray-500'
+                    }`}>
+                      {countCommentLines(commentText)} / {currentPackage.qty} comentários
+                      {countCommentLines(commentText) !== currentPackage.qty && ' — cada linha conta como um comentário'}
                     </p>
                   </div>
                 )}
@@ -1978,8 +2003,10 @@ const ApiTab = () => {
   "service": "3",
   "link": "https://instagram.com/p/ABC123",
   "quantity": 10,
-  "comments": "Seu texto aqui"
-}`}
+  "comments": "oi tudo bem\\nmeu nome é pedro\\nteste"
+}
+
+// Uma linha = um comentário. Total de linhas deve ser igual a "quantity".`}
           />
 
           <h4 className="font-semibold text-gray-900 mt-4 mb-2 text-sm">Response:</h4>
