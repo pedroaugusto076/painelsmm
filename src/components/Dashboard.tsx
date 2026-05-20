@@ -719,6 +719,7 @@ const ServicosTab = () => {
   const [selectedPackage, setSelectedPackage] = useState<string>('');
   const [instagramUsername, setInstagramUsername] = useState('');
   const [postUrl, setPostUrl] = useState('');
+  const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPixModal, setShowPixModal] = useState(false);
   const [pixData, setPixData] = useState<any>(null);
@@ -855,6 +856,12 @@ const ServicosTab = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (selectedService === 'comments' && !commentText.trim()) {
+      showError('Informe o texto que será escrito no comentário');
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -865,7 +872,8 @@ const ServicosTab = () => {
         quantity: currentPackage!.qty,
         price: currentPackage!.price,
         instagramUsername: instagramUsername.replace('@', ''),
-        postUrl: postUrl || undefined
+        postUrl: postUrl || undefined,
+        commentText: selectedService === 'comments' ? commentText.trim() : undefined,
       });
 
       if (response.success && response.data) {
@@ -881,6 +889,7 @@ const ServicosTab = () => {
         setSelectedPackage('');
         setInstagramUsername('');
         setPostUrl('');
+        setCommentText('');
         
         // Fechar modal após 3 segundos
         setTimeout(() => {
@@ -931,6 +940,7 @@ const ServicosTab = () => {
     setSelectedPackage('');
     setInstagramUsername('');
     setPostUrl('');
+    setCommentText('');
     
     // Mostrar mensagem
     showSuccess('PIX gerado! Após o pagamento, verifique seus pedidos na aba "Meus Pedidos" ou "Admin/Logs".');
@@ -1101,6 +1111,9 @@ const ServicosTab = () => {
               onClick={() => {
                 setSelectedService(service.id);
                 setSelectedPackage('');
+                if (service.id !== 'comments') {
+                  setCommentText('');
+                }
               }}
               className={`text-center bg-white rounded-2xl p-6 transition-all border-2 ${
                 isSelected
@@ -1254,6 +1267,25 @@ const ServicosTab = () => {
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Cole o link completo da publicação do Instagram
+                    </p>
+                  </div>
+                )}
+
+                {selectedService === 'comments' && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Texto do Comentário
+                    </label>
+                    <textarea
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none transition resize-y min-h-[100px]"
+                      placeholder="Ex: Adorei esse conteúdo! 🔥"
+                      required
+                      maxLength={500}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Este texto será usado nos comentários do pedido (repetido conforme a quantidade)
                     </p>
                   </div>
                 )}
@@ -1722,7 +1754,6 @@ const PedidosTab = () => {
           <div className="space-y-3">
             {pedidos.map((pedido) => {
               const styles = getOrderCardStyles(pedido.status);
-              const cancelReason = pedido.cancel_reason || pedido.error_message;
 
               return (
                 <div
@@ -1747,11 +1778,6 @@ const PedidosTab = () => {
                     <p className="text-xs text-gray-400 mt-1">
                       {formatDateBR(pedido.created_at)}
                     </p>
-                    {pedido.status === 'cancelled' && cancelReason && (
-                      <p className="text-xs text-red-700 mt-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                        Motivo: {cancelReason}
-                      </p>
-                    )}
                   </div>
                   <div className="text-right">
                     <p className={`font-bold ${styles.price}`}>R$ {parseFloat(pedido.price).toFixed(2)}</p>
@@ -1943,6 +1969,16 @@ const ApiTab = () => {
   "service": "1",
   "link": "https://instagram.com/usuario",
   "quantity": 1000
+}
+
+// Comentários (service: "3") — inclua "comments":
+{
+  "key": "${apiKey}",
+  "action": "add",
+  "service": "3",
+  "link": "https://instagram.com/p/ABC123",
+  "quantity": 10,
+  "comments": "Seu texto aqui"
 }`}
           />
 

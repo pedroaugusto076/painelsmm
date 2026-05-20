@@ -171,12 +171,26 @@ export default async function handler(req, res) {
     // COMPRAR COM SALDO
     // ============================================
     if (action === 'purchase' && req.method === 'POST') {
-      const { serviceType, packageId, quantity, price, instagramUsername, postUrl } = req.body;
+      const { serviceType, packageId, quantity, price, instagramUsername, postUrl, commentText } = req.body;
 
       if (!serviceType || !quantity || !price || !instagramUsername) {
         return res.status(400).json({
           success: false,
           message: 'Dados incompletos'
+        });
+      }
+
+      if (serviceType === 'comments' && (!commentText || !commentText.trim())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Texto do comentário é obrigatório para pedidos de comentários'
+        });
+      }
+
+      if (['likes', 'comments', 'views'].includes(serviceType) && !postUrl) {
+        return res.status(400).json({
+          success: false,
+          message: 'Link da publicação é obrigatório para este serviço'
         });
       }
 
@@ -220,6 +234,7 @@ export default async function handler(req, res) {
           price: price,
           instagram_username: instagramUsername,
           post_url: postUrl,
+          comment_text: serviceType === 'comments' ? commentText.trim() : null,
           status: 'completed',
           payment_status: 'paid',
           payment_id: `balance_${orderId}`,

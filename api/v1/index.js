@@ -107,7 +107,7 @@ export default async function handler(req, res) {
 
     // Ação: adicionar pedido
     if (action === 'add') {
-      const { service, link, quantity } = req.body;
+      const { service, link, quantity, comments } = req.body;
 
       // Validações
       if (!service) {
@@ -127,6 +127,10 @@ export default async function handler(req, res) {
       
       if (!serviceType) {
         return res.status(400).json({ error: 'Invalid service ID' });
+      }
+
+      if (serviceType === 'comments' && (!comments || !String(comments).trim())) {
+        return res.status(400).json({ error: 'Comments text is required for custom comments service (service 3)' });
       }
 
       // Extrair username do Instagram do link
@@ -245,6 +249,8 @@ export default async function handler(req, res) {
       // Criar pedido no banco (status completed = confirmado, aguardando aprovação do admin)
       const orderId = crypto.randomUUID();
 
+      const commentText = serviceType === 'comments' ? String(comments).trim() : null;
+
       const { error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -256,6 +262,7 @@ export default async function handler(req, res) {
           price: price,
           instagram_username: instagramUsername,
           post_url: serviceType !== 'followers' ? link : null,
+          comment_text: commentText,
           status: 'completed',  // Confirmado, aguardando aprovação do admin
           payment_status: 'paid',
           payment_id: `api_${orderId}`,

@@ -9,7 +9,12 @@ const SERVICE_MAPPING = {
   views: process.env.SMMMIDIA_SERVICE_VIEWS || '1356'
 };
 
-async function sendToSMMIDIA(serviceType, link, quantity) {
+function buildCommentsPayload(commentText, quantity) {
+  const text = commentText.trim();
+  return Array.from({ length: quantity }, () => text).join('\n');
+}
+
+async function sendToSMMIDIA(serviceType, link, quantity, commentText) {
   try {
     const fetch = (await import('node-fetch')).default;
     
@@ -18,18 +23,27 @@ async function sendToSMMIDIA(serviceType, link, quantity) {
       throw new Error(`Serviço ${serviceType} não mapeado`);
     }
 
+    const payload = {
+      key: process.env.SMMMIDIA_API_KEY,
+      action: 'add',
+      service: serviceId,
+      link: link,
+      quantity: quantity
+    };
+
+    if (serviceType === 'comments') {
+      if (!commentText || !commentText.trim()) {
+        throw new Error('Texto do comentário não informado no pedido');
+      }
+      payload.comments = buildCommentsPayload(commentText, quantity);
+    }
+
     const response = await fetch(process.env.SMMMIDIA_API_URL || 'https://smmmidia.com/api/v2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        key: process.env.SMMMIDIA_API_KEY,
-        action: 'add',
-        service: serviceId,
-        link: link,
-        quantity: quantity
-      })
+      body: JSON.stringify(payload)
     });
 
     const data = await response.json();
@@ -156,11 +170,19 @@ export default async function handler(req, res) {
       });
     }
 
+    if (order.service_type === 'comments' && !order.comment_text?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Pedido de comentários sem texto definido'
+      });
+    }
+
     // Enviar para SMMMIDIA
     const smmmidiaResult = await sendToSMMIDIA(
       order.service_type,
       link,
-      order.quantity
+      order.quantity,
+      order.comment_text
     );
 
     if (!smmmidiaResult.success) {

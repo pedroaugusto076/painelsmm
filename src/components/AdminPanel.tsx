@@ -46,6 +46,7 @@ interface Order {
   price: number;
   instagram_username: string;
   post_url: string | null;
+  comment_text: string | null;
   status: string;
   payment_status: string;
   payment_id: string;
@@ -581,6 +582,14 @@ const AdminPanel: React.FC = () => {
                     >
                       {selectedOrder.post_url}
                     </a>
+                  </div>
+                )}
+                {selectedOrder.service_type === 'comments' && selectedOrder.comment_text && (
+                  <div className="col-span-2">
+                    <p className="text-sm text-gray-600">Texto do Comentário</p>
+                    <div className="mt-1 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-900 whitespace-pre-wrap">{selectedOrder.comment_text}</p>
+                    </div>
                   </div>
                 )}
                 <div>

@@ -87,6 +87,7 @@ export default async function handler(req, res) {
       payment_status: order.payment_status,
       payment_id: order.payment_id,
       smmmidia_order_id: order.smmmidia_order_id,
+      comment_text: order.comment_text,
       error_message: order.error_message,
       created_at: order.created_at,
       updated_at: order.updated_at

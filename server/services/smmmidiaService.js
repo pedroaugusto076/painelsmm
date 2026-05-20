@@ -18,7 +18,12 @@ const SERVICE_MAPPING = {
  * @param {number} quantity - Quantidade desejada
  * @returns {Promise<Object>} - Resposta da API com order ID
  */
-export async function createOrder(serviceType, link, quantity) {
+function buildCommentsPayload(commentText, quantity) {
+  const text = commentText.trim();
+  return Array.from({ length: quantity }, () => text).join('\n');
+}
+
+export async function createOrder(serviceType, link, quantity, commentText) {
   try {
     if (!SMMMIDIA_API_KEY) {
       throw new Error('SMMMIDIA_API_KEY não configurada');
@@ -29,19 +34,29 @@ export async function createOrder(serviceType, link, quantity) {
       throw new Error(`Serviço ${serviceType} não mapeado`);
     }
 
-    console.log('📤 Enviando pedido para SMMMIDIA:', {
-      service: serviceId,
-      link,
-      quantity
-    });
-
-    const response = await axios.post(SMMMIDIA_API_URL, {
+    const payload = {
       key: SMMMIDIA_API_KEY,
       action: 'add',
       service: serviceId,
       link: link,
       quantity: quantity
+    };
+
+    if (serviceType === 'comments') {
+      if (!commentText || !commentText.trim()) {
+        throw new Error('Texto do comentário não informado no pedido');
+      }
+      payload.comments = buildCommentsPayload(commentText, quantity);
+    }
+
+    console.log('📤 Enviando pedido para SMMMIDIA:', {
+      service: serviceId,
+      link,
+      quantity,
+      hasComments: serviceType === 'comments'
     });
+
+    const response = await axios.post(SMMMIDIA_API_URL, payload);
 
     console.log('✅ Resposta da SMMMIDIA:', response.data);
 

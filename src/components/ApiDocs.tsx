@@ -159,6 +159,16 @@ const ApiDocs: React.FC = () => {
   "service": "1",
   "link": "https://instagram.com/usuario",
   "quantity": 1000
+}
+
+// Para comentários personalizados (service: "3"):
+{
+  "key": "sua-api-key",
+  "action": "add",
+  "service": "3",
+  "link": "https://instagram.com/p/ABC123",
+  "quantity": 10,
+  "comments": "Adorei esse conteúdo!"
 }`}
             />
 
@@ -203,6 +213,12 @@ const ApiDocs: React.FC = () => {
                     <td className="px-4 py-2">number</td>
                     <td className="px-4 py-2">✅ Sim</td>
                     <td className="px-4 py-2">Quantidade desejada</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2 font-mono text-xs">comments</td>
+                    <td className="px-4 py-2">string</td>
+                    <td className="px-4 py-2">⚠️ Serviço 3</td>
+                    <td className="px-4 py-2">Texto do comentário (obrigatório para comentários personalizados)</td>
                   </tr>
                 </tbody>
               </table>

@@ -64,10 +64,13 @@ export default async function handler(req, res) {
       });
     }
 
-    const formattedOrders = (orders || []).map((order) => ({
-      ...order,
-      cancel_reason: order.status === 'cancelled' ? order.error_message : null,
-    }));
+    const formattedOrders = (orders || []).map((order) => {
+      if (order.status === 'cancelled') {
+        const { error_message, ...safeOrder } = order;
+        return safeOrder;
+      }
+      return order;
+    });
 
     return res.status(200).json({
       success: true,

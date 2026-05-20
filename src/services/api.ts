@@ -194,6 +194,7 @@ export const paymentApi = {
     price: number;
     instagramUsername: string;
     postUrl?: string;
+    commentText?: string;
   }): Promise<ApiResponse<{
     orderId: string;
     preferenceId: string;
@@ -242,6 +243,7 @@ export const paymentApi = {
     price: number;
     instagramUsername: string;
     postUrl?: string;
+    commentText?: string;
   }): Promise<ApiResponse<{
     orderId: string;
     newBalance: number;

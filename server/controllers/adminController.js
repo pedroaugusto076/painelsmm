@@ -109,10 +109,18 @@ export const approveOrder = async (req, res) => {
     });
 
     // Enviar para SMMMIDIA
+    if (order.service_type === 'comments' && !order.comment_text?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Pedido de comentários sem texto definido'
+      });
+    }
+
     const smmmidiaResult = await smmmidiaService.createOrder(
       order.service_type,
       link,
-      order.quantity
+      order.quantity,
+      order.comment_text
     );
 
     if (!smmmidiaResult.success) {
