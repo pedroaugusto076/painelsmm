@@ -147,6 +147,7 @@ module.exports = async function handler(req, res) {
         .from('balance_transactions')
         .select('*')
         .eq('user_id', decoded.userId)
+        .eq('status', 'completed')  // Apenas transações completadas
         .order('created_at', { ascending: false })
         .limit(50);
 

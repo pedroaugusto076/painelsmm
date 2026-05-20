@@ -271,7 +271,7 @@ const AddBalanceModal: React.FC<{ onClose: () => void; onSuccess: () => void; cu
   const [qrCode, setQrCode] = useState('');
   const [qrCodeBase64, setQrCodeBase64] = useState('');
   const [paymentId, setPaymentId] = useState('');
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
   const suggestedAmounts = [50, 100, 200, 500];
 
@@ -313,7 +313,7 @@ const AddBalanceModal: React.FC<{ onClose: () => void; onSuccess: () => void; cu
           
           // Se o saldo mudou, pagamento foi confirmado
           if (newBalance > previousBalance) {
-            setShowSuccess(true);
+            setShowPaymentSuccess(true);
             clearInterval(interval);
             setTimeout(() => {
               onSuccess();
@@ -330,11 +330,14 @@ const AddBalanceModal: React.FC<{ onClose: () => void; onSuccess: () => void; cu
   };
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(qrCode);
-    showSuccess('Código PIX copiado!');
+    navigator.clipboard.writeText(qrCode).then(() => {
+      showSuccess('Código PIX copiado!');
+    }).catch(() => {
+      showError('Erro ao copiar código PIX');
+    });
   };
 
-  if (showSuccess) {
+  if (showPaymentSuccess) {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div onClick={onClose} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
