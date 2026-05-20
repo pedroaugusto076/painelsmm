@@ -168,7 +168,7 @@ const ApiDocs: React.FC = () => {
   "service": "3",
   "link": "https://instagram.com/p/ABC123",
   "quantity": 10,
-  "comments": "oi tudo bem\\nmeu nome é pedro\\nteste"
+  "comments": "comentario1\\ncomentario2\\ncomentario3"
 }
 
 // "comments": uma linha = um comentário. A quantidade de linhas deve ser igual a "quantity".`}

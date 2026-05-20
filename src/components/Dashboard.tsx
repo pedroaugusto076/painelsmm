@@ -1298,7 +1298,7 @@ const ServicosTab = () => {
                         }
                       }}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none transition resize-y min-h-[140px] font-mono text-sm"
-                      placeholder={`Escreva exatamente ${currentPackage.qty} comentários, um por linha:\n\noi tudo bem\nmeu nome é pedro\nteste`}
+                      placeholder={`Escreva exatamente ${currentPackage.qty} comentários, um por linha:\n\ncomentario1\ncomentario2\ncomentario3`}
                       required
                       rows={Math.min(currentPackage.qty, 12)}
                     />
@@ -2003,7 +2003,7 @@ const ApiTab = () => {
   "service": "3",
   "link": "https://instagram.com/p/ABC123",
   "quantity": 10,
-  "comments": "oi tudo bem\\nmeu nome é pedro\\nteste"
+  "comments": "comentario1\\ncomentario2\\ncomentario3"
 }
 
 // Uma linha = um comentário. Total de linhas deve ser igual a "quantity".`}
