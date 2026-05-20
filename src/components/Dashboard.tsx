@@ -1588,31 +1588,85 @@ const AdminTab = () => {
 };
 
 // Aba de Pedidos
+const VISIBLE_ORDER_STATUSES = ['completed', 'processing', 'delivered', 'cancelled'];
+
 const PedidosTab = () => {
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadOrders();
   }, []);
 
   const loadOrders = async () => {
-    
     try {
       const response = await paymentApi.getUserOrders();
 
       if (response.success && response.data) {
-        // Filtrar apenas pedidos concluídos (pagos)
-        const completedOrders = response.data.orders.filter((order: any) => order.status === 'completed');
-        
-        setPedidos(completedOrders);
-      } else {
-        
+        const visibleOrders = response.data.orders
+          .filter((order: any) => VISIBLE_ORDER_STATUSES.includes(order.status))
+          .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setPedidos(visibleOrders);
       }
     } catch (error) {
       
     } finally {
       setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadOrders();
+  };
+
+  const getOrderStatusLabel = (status: string) => {
+    switch (status) {
+      case 'completed': return 'Confirmado';
+      case 'processing': return 'Em processamento';
+      case 'delivered': return 'Entregue';
+      case 'cancelled': return 'Cancelado';
+      default: return status;
+    }
+  };
+
+  const getOrderCardStyles = (status: string) => {
+    switch (status) {
+      case 'cancelled':
+        return {
+          card: 'from-red-50 to-orange-50 border-red-200',
+          icon: 'text-red-600',
+          badge: 'bg-red-100 text-red-700',
+          price: 'text-red-600',
+          sublabel: 'Cancelado',
+        };
+      case 'processing':
+        return {
+          card: 'from-blue-50 to-indigo-50 border-blue-200',
+          icon: 'text-blue-600',
+          badge: 'bg-blue-100 text-blue-700',
+          price: 'text-blue-600',
+          sublabel: 'Em processamento',
+        };
+      case 'delivered':
+        return {
+          card: 'from-purple-50 to-violet-50 border-purple-200',
+          icon: 'text-purple-600',
+          badge: 'bg-purple-100 text-purple-700',
+          price: 'text-purple-600',
+          sublabel: 'Entregue',
+        };
+      default:
+        return {
+          card: 'from-green-50 to-emerald-50 border-green-200',
+          icon: 'text-green-600',
+          badge: 'bg-green-100 text-green-700',
+          price: 'text-green-600',
+          sublabel: 'Pago',
+        };
     }
   };
 
@@ -1638,42 +1692,74 @@ const PedidosTab = () => {
     <div className="space-y-4">
       <div className="bg-white rounded-xl p-6 border border-gray-200">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-900">Pedidos Confirmados</h3>
-          <span className="text-sm text-gray-600">
-            {pedidos.length} {pedidos.length === 1 ? 'pedido' : 'pedidos'}
-          </span>
+          <div>
+            <h3 className="font-bold text-gray-900">Meus Pedidos</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Acompanhe pedidos pagos, em processamento e cancelados
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-600">
+              {pedidos.length} {pedidos.length === 1 ? 'pedido' : 'pedidos'}
+            </span>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-lg transition flex items-center gap-2 disabled:opacity-50"
+            >
+              <Loader2 className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Atualizar
+            </button>
+          </div>
         </div>
         {pedidos.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <ShoppingCart className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p className="font-semibold mb-1">Nenhum pedido confirmado</p>
-            <p className="text-sm">Seus pedidos pagos aparecerão aqui</p>
+            <p className="font-semibold mb-1">Nenhum pedido encontrado</p>
+            <p className="text-sm">Seus pedidos pagos aparecerão aqui após a confirmação do PIX</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {pedidos.map((pedido) => (
-              <div key={pedido.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl hover:shadow-md transition">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    <h4 className="font-bold text-gray-900">{getServiceName(pedido.service_type)}</h4>
-                    <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
-                      ✓ Confirmado
-                    </span>
+            {pedidos.map((pedido) => {
+              const styles = getOrderCardStyles(pedido.status);
+              const cancelReason = pedido.cancel_reason || pedido.error_message;
+
+              return (
+                <div
+                  key={pedido.id}
+                  className={`flex items-center justify-between p-4 bg-gradient-to-r ${styles.card} border rounded-xl hover:shadow-md transition`}
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      {pedido.status === 'cancelled' ? (
+                        <XCircle className={`h-5 w-5 ${styles.icon}`} />
+                      ) : (
+                        <CheckCircle2 className={`h-5 w-5 ${styles.icon}`} />
+                      )}
+                      <h4 className="font-bold text-gray-900">{getServiceName(pedido.service_type)}</h4>
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${styles.badge}`}>
+                        {getOrderStatusLabel(pedido.status)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {pedido.quantity.toLocaleString()} unidades • @{pedido.instagram_username}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {formatDateBR(pedido.created_at)}
+                    </p>
+                    {pedido.status === 'cancelled' && cancelReason && (
+                      <p className="text-xs text-red-700 mt-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                        Motivo: {cancelReason}
+                      </p>
+                    )}
                   </div>
-                  <p className="text-sm text-gray-600">
-                    {pedido.quantity.toLocaleString()} unidades • @{pedido.instagram_username}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {formatDateBR(pedido.created_at)}
-                  </p>
+                  <div className="text-right">
+                    <p className={`font-bold ${styles.price}`}>R$ {parseFloat(pedido.price).toFixed(2)}</p>
+                    <p className={`text-xs font-semibold mt-1 ${styles.price}`}>{styles.sublabel}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-green-600">R$ {parseFloat(pedido.price).toFixed(2)}</p>
-                  <p className="text-xs text-green-600 font-semibold mt-1">Pago</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

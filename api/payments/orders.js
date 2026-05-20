@@ -11,6 +11,8 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+
   if (req.method !== 'GET') {
     return res.status(405).json({
       success: false,
@@ -62,10 +64,15 @@ export default async function handler(req, res) {
       });
     }
 
+    const formattedOrders = (orders || []).map((order) => ({
+      ...order,
+      cancel_reason: order.status === 'cancelled' ? order.error_message : null,
+    }));
+
     return res.status(200).json({
       success: true,
       data: {
-        orders: orders || []
+        orders: formattedOrders
       }
     });
   } catch (error) {

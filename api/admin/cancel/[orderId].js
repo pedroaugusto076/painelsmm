@@ -70,6 +70,7 @@ export default async function handler(req, res) {
       .from('orders')
       .update({
         status: 'cancelled',
+        payment_status: 'cancelled',
         error_message: reason.trim(),
         updated_at: new Date().toISOString()
       })
