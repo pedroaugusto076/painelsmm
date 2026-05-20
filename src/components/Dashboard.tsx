@@ -690,6 +690,11 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
             <h1 className="text-xl font-bold text-gray-900">
               {menuItems.find(item => item.id === currentTab)?.name}
             </h1>
+            {/* Badge Instagram */}
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-full">
+              <Instagram className="w-3.5 h-3.5 text-white" />
+              <span className="text-xs font-semibold text-white">Instagram</span>
+            </div>
           </div>
           
           {/* Saldo no Header */}
@@ -791,7 +796,7 @@ const ServicosTab = () => {
       name: 'Seguidores',
       icon: Users,
       color: 'from-violet-500 to-pink-500',
-      description: '+ receba brindes nos pacotes',
+      description: 'Aumente seus seguidores com perfis reais e ativos',
       packages: [
         { id: '100', qty: 100, price: 14.90, originalPrice: null, discount: null, bonus: false },
         { id: '500', qty: 500, price: 64.90, originalPrice: null, discount: null, bonus: false },
@@ -806,7 +811,7 @@ const ServicosTab = () => {
       name: 'Curtidas',
       icon: ThumbsUp,
       color: 'from-red-500 to-orange-500',
-      description: '+ receba brindes nos pacotes',
+      description: 'Mais curtidas para suas publicações',
       packages: [
         { id: '100', qty: 100, price: 4.90, originalPrice: null, discount: null, bonus: false },
         { id: '500', qty: 500, price: 17.90, originalPrice: null, discount: null, bonus: false },
@@ -836,7 +841,7 @@ const ServicosTab = () => {
       name: 'Visualizações',
       icon: PlayCircle,
       color: 'from-green-500 to-emerald-500',
-      description: '+ receba brindes nos pacotes',
+      description: 'Aumente as visualizações dos seus vídeos',
       packages: [
         { id: '1000', qty: 1000, price: 4.90, originalPrice: null, discount: null, bonus: false },
         { id: '5000', qty: 5000, price: 19.90, originalPrice: null, discount: null, bonus: false },

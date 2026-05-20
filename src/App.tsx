@@ -404,86 +404,131 @@ const MiniTestimonial = () => (
   </section>
 );
 
-const Pricing = () => (
+const Pricing: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => (
   <section id="planos" className="py-16 sm:py-20 md:py-24 bg-gray-50">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12 sm:mb-16">
         <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-100 text-green-600 mb-4 sm:mb-6">
           <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         </div>
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">Pacotes</h2>
-        <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8 px-4">Escolha o pacote ideal para impulsionar seu Instagram hoje mesmo</p>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 tracking-tight">Pacotes Completos</h2>
+        <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8 px-4">Seguidores, Curtidas, Comentários e Visualizações para impulsionar seu Instagram</p>
         
         <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-600 font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm">
-          <Clock className="w-3 h-3 sm:w-4 sm:h-4" /> 10:26 Ofertas por tempo limitado
+          <Clock className="w-3 h-3 sm:w-4 sm:h-4" /> Ofertas por tempo limitado
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto items-center">
         {/* Starter */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-lg border border-gray-100 flex flex-col min-h-[480px] sm:min-h-[520px]">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-lg border border-gray-100 flex flex-col min-h-[520px] sm:min-h-[560px]">
           <div className="text-center mb-4 sm:mb-6">
             <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Starter</h3>
-            <div className="flex justify-center items-center gap-2">
+            <div className="flex justify-center items-center gap-2 mb-3">
                <div className="text-4xl sm:text-5xl font-extrabold text-gray-900">1K</div>
-               <div className="text-xs sm:text-sm font-medium text-violet-700 leading-tight text-left">Seguidores<br/>Reais</div>
+               <div className="text-xs sm:text-sm font-medium text-violet-700 leading-tight text-left">Pacote<br/>Completo</div>
             </div>
           </div>
           <div className="flex-1">
-            <ul className="space-y-3 sm:space-y-4 text-center text-gray-700 font-medium text-sm sm:text-base">
-              <li>✓ 1.000 Seguidores Reais</li>
-              <li>✓ Entrega em até 24h</li>
-              <li>✓ 100% Seguro</li>
-              <li>✓ Garantia de Reposição</li>
-              <li>✓ Suporte 24/7</li>
+            <ul className="space-y-3 sm:space-y-3 text-left text-gray-700 font-medium text-sm sm:text-base">
+              <li className="flex items-center gap-2">
+                <span className="text-violet-600">👥</span>
+                <span><strong>1.000 Seguidores</strong> Reais</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-red-600">❤️</span>
+                <span><strong>500 Curtidas</strong> Garantidas</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-blue-600">💬</span>
+                <span><strong>50 Comentários</strong> Reais</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-green-600">👁️</span>
+                <span><strong>5K Visualizações</strong></span>
+              </li>
+              <li className="flex items-center gap-2">✓ Entrega em até 24h</li>
+              <li className="flex items-center gap-2">✓ 100% Seguro</li>
+              <li className="flex items-center gap-2">✓ Garantia de Reposição</li>
+              <li className="flex items-center gap-2">✓ Suporte 24/7</li>
             </ul>
           </div>
-          <button className="w-full py-3 sm:py-4 mt-4 sm:mt-6 rounded-full font-bold text-base sm:text-lg bg-pink-50 text-violet-700 hover:bg-pink-100 transition">Comprar Agora</button>
+          <button onClick={() => onNavigate('cadastro')} className="w-full py-3 sm:py-4 mt-4 sm:mt-6 rounded-full font-bold text-base sm:text-lg bg-pink-50 text-violet-700 hover:bg-pink-100 transition">Comprar Agora</button>
         </div>
 
         {/* Growth */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-lg border border-gray-100 flex flex-col min-h-[480px] sm:min-h-[520px]">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-lg border border-gray-100 flex flex-col min-h-[520px] sm:min-h-[560px]">
           <div className="text-center mb-4 sm:mb-6">
             <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Growth</h3>
-            <div className="flex justify-center items-center gap-2">
+            <div className="flex justify-center items-center gap-2 mb-3">
                <div className="text-4xl sm:text-5xl font-extrabold text-gray-900">5K</div>
-               <div className="text-xs sm:text-sm font-medium text-violet-700 leading-tight text-left">Seguidores<br/>Reais</div>
+               <div className="text-xs sm:text-sm font-medium text-violet-700 leading-tight text-left">Pacote<br/>Completo</div>
             </div>
           </div>
           <div className="flex-1">
-            <ul className="space-y-3 sm:space-y-4 text-center text-gray-700 font-medium text-sm sm:text-base">
-              <li>✓ 5.000 Seguidores Reais</li>
-              <li>✓ Entrega em até 24h</li>
-              <li>✓ 100% Seguro</li>
-              <li>✓ Garantia de Reposição</li>
-              <li>✓ Suporte Prioritário 24/7</li>
+            <ul className="space-y-3 sm:space-y-3 text-left text-gray-700 font-medium text-sm sm:text-base">
+              <li className="flex items-center gap-2">
+                <span className="text-violet-600">👥</span>
+                <span><strong>5.000 Seguidores</strong> Reais</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-red-600">❤️</span>
+                <span><strong>2.500 Curtidas</strong> Garantidas</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-blue-600">💬</span>
+                <span><strong>100 Comentários</strong> Reais</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-green-600">👁️</span>
+                <span><strong>25K Visualizações</strong></span>
+              </li>
+              <li className="flex items-center gap-2">✓ Entrega em até 24h</li>
+              <li className="flex items-center gap-2">✓ 100% Seguro</li>
+              <li className="flex items-center gap-2">✓ Garantia de Reposição</li>
+              <li className="flex items-center gap-2">✓ Suporte Prioritário 24/7</li>
             </ul>
           </div>
-          <button className="w-full py-3 sm:py-4 mt-4 sm:mt-6 rounded-full font-bold text-base sm:text-lg bg-violet-700 text-white hover:bg-violet-800 shadow-xl shadow-violet-200 transition">Comprar Agora</button>
+          <button onClick={() => onNavigate('cadastro')} className="w-full py-3 sm:py-4 mt-4 sm:mt-6 rounded-full font-bold text-base sm:text-lg bg-violet-700 text-white hover:bg-violet-800 shadow-xl shadow-violet-200 transition">Comprar Agora</button>
         </div>
 
         {/* Premium (Mais Vendido) */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-[#ffeb85] flex flex-col min-h-[500px] sm:min-h-[560px] relative md:col-span-2 lg:col-span-1 transform lg:-translate-y-4">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-[#ffeb85] flex flex-col min-h-[540px] sm:min-h-[600px] relative md:col-span-2 lg:col-span-1 transform lg:-translate-y-4">
           <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#ffeb85] text-amber-900 font-black text-xs sm:text-sm px-3 sm:px-4 py-1 sm:py-1.5 rounded-full uppercase tracking-wider flex items-center gap-1">
             <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-current" /> MAIS VENDIDO
           </div>
           <div className="text-center mb-4 sm:mb-6 mt-3 sm:mt-4">
             <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Premium</h3>
-            <div className="flex justify-center items-center gap-2">
+            <div className="flex justify-center items-center gap-2 mb-3">
                <div className="text-4xl sm:text-5xl font-extrabold text-[#7e22ce]">10K</div>
-               <div className="text-xs sm:text-sm font-medium text-amber-600 leading-tight text-left">Seguidores<br/>Reais</div>
+               <div className="text-xs sm:text-sm font-medium text-amber-600 leading-tight text-left">Pacote<br/>Completo</div>
             </div>
           </div>
           <div className="flex-1">
-            <ul className="space-y-3 sm:space-y-4 text-center text-gray-800 font-medium font-semibold text-sm sm:text-base">
-              <li>✓ 10.000 Seguidores Reais</li>
-              <li>✓ Entrega em até 12h</li>
-              <li>✓ 100% Seguro</li>
-              <li>✓ Garantia Vitalícia</li>
-              <li>✓ Suporte VIP 24/7</li>
+            <ul className="space-y-3 sm:space-y-3 text-left text-gray-800 font-medium font-semibold text-sm sm:text-base">
+              <li className="flex items-center gap-2">
+                <span className="text-violet-600">👥</span>
+                <span><strong>10.000 Seguidores</strong> Reais</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-red-600">❤️</span>
+                <span><strong>5.000 Curtidas</strong> Garantidas</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-blue-600">💬</span>
+                <span><strong>250 Comentários</strong> Reais</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-green-600">👁️</span>
+                <span><strong>50K Visualizações</strong></span>
+              </li>
+              <li className="flex items-center gap-2">✓ Entrega em até 12h</li>
+              <li className="flex items-center gap-2">✓ 100% Seguro</li>
+              <li className="flex items-center gap-2">✓ Garantia Vitalícia</li>
+              <li className="flex items-center gap-2">✓ Suporte VIP 24/7</li>
             </ul>
           </div>
-          <button className="w-full py-3 sm:py-4 mt-4 sm:mt-6 rounded-full font-bold text-base sm:text-lg bg-violet-700 text-white hover:bg-violet-800 shadow-xl shadow-violet-200 transition">Comprar Agora</button>
+          <button onClick={() => onNavigate('cadastro')} className="w-full py-3 sm:py-4 mt-4 sm:mt-6 rounded-full font-bold text-base sm:text-lg bg-violet-700 text-white hover:bg-violet-800 shadow-xl shadow-violet-200 transition">Comprar Agora</button>
         </div>
       </div>
 
@@ -696,7 +741,7 @@ const FAQ = () => {
     },
     {
       q: "Como funciona o pagamento?",
-      a: "Aceitamos PIX, cartão de crédito e boleto bancário. O pagamento é processado de forma segura e seus dados são protegidos."
+      a: "Aceitamos PIX. O pagamento é processado de forma segura e instantânea, e seus dados são protegidos."
     }
   ];
 
@@ -1913,7 +1958,7 @@ const HomePage: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate
     <Hero />
     <HowItWorks />
     <MiniTestimonial />
-    <Pricing />
+    <Pricing onNavigate={onNavigate} />
     <Guarantee />
     <SocialProof />
     <Features />
