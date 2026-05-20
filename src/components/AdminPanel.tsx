@@ -51,6 +51,7 @@ interface Order {
   payment_id: string;
   smmmidia_order_id: string | null;
   error_message: string | null;
+  cancel_reason: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -78,6 +79,9 @@ const AdminPanel: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
   const [orderToApprove, setOrderToApprove] = useState<string | null>(null);
   const [showResultModal, setShowResultModal] = useState(false);
   const [resultData, setResultData] = useState<{
@@ -190,21 +194,31 @@ const AdminPanel: React.FC = () => {
   };
 
   const handleCancelOrder = async (orderId: string) => {
-    const reason = prompt('Motivo do cancelamento:');
-    if (!reason) return;
+    setCancelOrderId(orderId);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelOrder = async () => {
+    if (!cancelOrderId || !cancelReason.trim()) {
+      showError('Por favor, informe o motivo do cancelamento');
+      return;
+    }
 
     try {
-      setActionLoading(orderId);
-      const response = await adminApi.cancelOrder(orderId, reason);
+      setActionLoading(cancelOrderId);
+      const response = await adminApi.cancelOrder(cancelOrderId, cancelReason);
 
       if (response.success) {
         showInfo('Pedido cancelado com sucesso!');
+        setShowCancelModal(false);
+        setCancelOrderId(null);
+        setCancelReason('');
         loadData();
       } else {
         showError(`Erro: ${response.message}`);
       }
     } catch (error: any) {
-      alert(`Erro ao cancelar pedido: ${error.message}`);
+      showError(`Erro ao cancelar pedido: ${error.message}`);
     } finally {
       setActionLoading(null);
     }
@@ -512,8 +526,12 @@ const AdminPanel: React.FC = () => {
 
       {/* Order Details Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            onClick={() => setSelectedOrder(null)}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          />
+          <div className="relative bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Detalhes do Pedido</h2>
@@ -607,6 +625,14 @@ const AdminPanel: React.FC = () => {
                     <p className="font-medium text-gray-900">{selectedOrder.smmmidia_order_id}</p>
                   </div>
                 )}
+                {selectedOrder.cancel_reason && (
+                  <div className="col-span-2">
+                    <p className="text-sm text-gray-600">Motivo do Cancelamento</p>
+                    <div className="mt-1 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <p className="text-sm text-orange-800">{selectedOrder.cancel_reason}</p>
+                    </div>
+                  </div>
+                )}
                 {selectedOrder.error_message && (
                   <div className="col-span-2">
                     <p className="text-sm text-gray-600">Mensagem de Erro</p>
@@ -652,6 +678,63 @@ const AdminPanel: React.FC = () => {
                   className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition"
                 >
                   Aprovar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cancelamento */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div onClick={() => {
+            setShowCancelModal(false);
+            setCancelOrderId(null);
+            setCancelReason('');
+          }} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <XCircle className="h-8 w-8 text-red-600" />
+              </div>
+              
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Cancelar Pedido
+              </h3>
+              
+              <p className="text-gray-600 mb-4">
+                Informe o motivo do cancelamento deste pedido:
+              </p>
+              
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Ex: Produto indisponível, erro no pedido, solicitação do cliente..."
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none resize-none mb-6"
+                rows={4}
+                autoFocus
+              />
+              
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setCancelOrderId(null);
+                    setCancelReason('');
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition"
+                  disabled={actionLoading !== null}
+                >
+                  Voltar
+                </button>
+                <button
+                  onClick={confirmCancelOrder}
+                  disabled={!cancelReason.trim() || actionLoading !== null}
+                  className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {actionLoading ? 'Cancelando...' : 'Confirmar Cancelamento'}
                 </button>
               </div>
             </div>

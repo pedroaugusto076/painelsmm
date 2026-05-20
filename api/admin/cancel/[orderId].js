@@ -63,7 +63,7 @@ module.exports = async function handler(req, res) {
       .from('orders')
       .update({
         status: 'cancelled',
-        error_message: reason || 'Cancelado pelo administrador',
+        cancel_reason: reason || 'Cancelado pelo administrador',
         updated_at: new Date().toISOString()
       })
       .eq('id', orderId);
